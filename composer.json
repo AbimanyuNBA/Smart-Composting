@@ -7,6 +7,10 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "google/auth": "^1.50",
+        "google/cloud-firestore": "^2.1",
+        "guzzlehttp/guzzle": "^7.10",
+        "kreait/firebase-php": "^8.2",
         "kreait/laravel-firebase": "^7.2",
         "laravel/framework": "^13.7",
         "laravel/tinker": "^3.0"
