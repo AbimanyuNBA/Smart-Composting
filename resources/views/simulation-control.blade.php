@@ -177,6 +177,30 @@
                         Control Panel
                     </h4>
 
+                    <table class="table mb-3">
+
+                        <tr>
+                            <th width="180">
+                                Batch Aktif
+                            </th>
+
+                            <td>
+                                {{ $activeBatch }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>
+                                Status Batch
+                            </th>
+
+                            <td>
+                                {{ $batchInfo['status'] ?? '-' }}
+                            </td>
+                        </tr>
+
+                    </table>
+
                     <table class="table">
 
                         <tr>
@@ -210,20 +234,78 @@
 
                     <div class="d-flex gap-2 flex-wrap">
 
-                        <a href="/simulation/start" class="btn btn-success">
-                            ▶ Start
-                        </a>
+                        {{-- DRAFT --}}
+                        @if (($batchInfo['status'] ?? '') == 'draft')
+                            <a href="/batch/start" class="btn btn-success" onclick="return confirm('Mulai batch ini?')">
 
-                        <a href="/simulation/stop" class="btn btn-danger">
-                            ⏹ Stop
-                        </a>
+                                ▶ Start
+                            </a>
 
-                        <a href="/simulation/reset" class="btn btn-warning">
-                            🔄 Reset
-                        </a>
+                            {{-- ACTIVE --}}
+                        @elseif (($batchInfo['status'] ?? '') == 'active')
+                            <a href="/batch/pause" class="btn btn-warning" onclick="return confirm('Pause batch ini?')">
+
+                                ⏸ Pause
+                            </a>
+
+                            <a href="/batch/complete" class="btn btn-success"
+                                onclick="return confirm('Selesaikan batch ini?')">
+
+                                ✅ Complete
+                            </a>
+
+                            <a href="/batch/cancel" class="btn btn-danger"
+                                onclick="return confirm('Batalkan batch ini?')">
+
+                                ❌ Cancel
+                            </a>
+
+                            {{-- PAUSED --}}
+                        @elseif (($batchInfo['status'] ?? '') == 'paused')
+                            <a href="/batch/resume" class="btn btn-success"
+                                onclick="return confirm('Lanjutkan batch ini?')">
+
+                                ▶ Resume
+                            </a>
+
+                            <a href="/batch/complete" class="btn btn-primary"
+                                onclick="return confirm('Selesaikan batch ini?')">
+
+                                ✅ Complete
+                            </a>
+
+                            <a href="/batch/cancel" class="btn btn-danger"
+                                onclick="return confirm('Batalkan batch ini?')">
+
+                                ❌ Cancel
+                            </a>
+
+                            {{-- COMPLETED --}}
+                        @elseif (($batchInfo['status'] ?? '') == 'completed')
+                            <a href="/batch/create" class="btn btn-primary"
+                                onclick="return confirm('Buat batch baru?')">
+
+                                📦 Batch Baru
+                            </a>
+
+                            <span class="badge bg-success p-2">
+                                Batch Selesai
+                            </span>
+
+                            {{-- CANCELLED --}}
+                        @elseif (($batchInfo['status'] ?? '') == 'cancelled')
+                            <a href="/batch/create" class="btn btn-primary"
+                                onclick="return confirm('Buat batch baru?')">
+
+                                📦 Batch Baru
+                            </a>
+
+                            <span class="badge bg-danger p-2">
+                                Batch Dibatalkan
+                            </span>
+                        @endif
 
                     </div>
-
                 </div>
 
             </div>
@@ -439,10 +521,14 @@
                     await response.json();
 
                 const current =
-                    data.currentData;
+                    data.currentData || {};
 
                 const system =
-                    data.system;
+                    data.system || {};
+
+                if (Object.keys(current).length === 0) {
+                    return;
+                }
 
                 document.getElementById('suhuValue')
                     .innerHTML =

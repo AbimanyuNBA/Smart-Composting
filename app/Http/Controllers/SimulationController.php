@@ -6,7 +6,16 @@ use Illuminate\Http\Request;
 
 class SimulationController extends Controller
 {
+    private function getActiveBatch()
+    {
+        $database = app('firebase.database');
 
+        $system = $database
+            ->getReference('system')
+            ->getValue();
+
+        return $system['active_batch'] ?? 'batch_001';
+    }
 
     public function dashboardData()
     {
@@ -16,8 +25,12 @@ class SimulationController extends Controller
             ->getReference('system')
             ->getValue();
 
+        $activeBatch = $this->getActiveBatch();
+
         $currentData = $database
-            ->getReference('current_data')
+            ->getReference(
+                "batches/$activeBatch/current_data"
+            )
             ->getValue();
 
         return response()->json([
@@ -34,19 +47,26 @@ class SimulationController extends Controller
             ->getReference('system')
             ->getValue();
 
+        $activeBatch = $this->getActiveBatch();
+
+        $batchInfo = $database->getReference( "batches/$activeBatch")
+        ->getValue();
+
         $currentData = $database
-            ->getReference('current_data')
+            ->getReference(
+                "batches/$activeBatch/current_data"
+            )
             ->getValue();
 
         $history = $database
-            ->getReference('history')
+            ->getReference(
+                "batches/$activeBatch/history"
+            )
             ->getValue();
-
 
         $history = array_values($history ?? []);
 
         $history = array_slice($history, -20);
-
 
         $labels = [];
         $suhuData = [];
@@ -59,17 +79,21 @@ class SimulationController extends Controller
 
             $labels[] = $item['hari'] ?? '';
 
-            $suhuData[] = $item['suhu'] ?? 0;
+            $suhuData[] =
+                $item['suhu'] ?? 0;
 
-            $kelembapanData[] = $item['kelembapan'] ?? 0;
+            $kelembapanData[] =
+                $item['kelembapan'] ?? 0;
 
-            $phData[] = $item['ph'] ?? 0;
+            $phData[] =
+                $item['ph'] ?? 0;
 
-            $co2Data[] = $item['co2'] ?? 0;
+            $co2Data[] =
+                $item['co2'] ?? 0;
 
-            $kematanganData[] = $item['kematangan_pct'] ?? 0;
+            $kematanganData[] =
+                $item['kematangan_pct'] ?? 0;
         }
-
 
         return view(
             'simulation-control',
@@ -81,10 +105,13 @@ class SimulationController extends Controller
                 'kelembapanData',
                 'phData',
                 'co2Data',
-                'kematanganData'
+                'kematanganData',
+                'activeBatch',
+                'batchInfo'
             )
         );
     }
+
     public function start()
     {
         $database = app('firebase.database');
@@ -95,7 +122,6 @@ class SimulationController extends Controller
 
         return 'Simulation Started';
     }
-
 
     public function stop()
     {
@@ -108,13 +134,16 @@ class SimulationController extends Controller
         return 'Simulation Stopped';
     }
 
-
     public function chartData()
     {
         $database = app('firebase.database');
 
+        $activeBatch = $this->getActiveBatch();
+
         $history = $database
-            ->getReference('history')
+            ->getReference(
+                "batches/$activeBatch/history"
+            )
             ->getValue();
 
         $history = array_values($history ?? []);
@@ -132,7 +161,8 @@ class SimulationController extends Controller
 
             $labels[] = $item['hari'] ?? '';
 
-            $suhuData[] = $item['suhu'] ?? 0;
+            $suhuData[] =
+                $item['suhu'] ?? 0;
 
             $kelembapanData[] =
                 $item['kelembapan'] ?? 0;
@@ -142,6 +172,7 @@ class SimulationController extends Controller
 
             $co2Data[] =
                 $item['co2'] ?? 0;
+
             $kematanganData[] =
                 $item['kematangan_pct'] ?? 0;
         }
@@ -160,8 +191,12 @@ class SimulationController extends Controller
     {
         $database = app('firebase.database');
 
+        $activeBatch = $this->getActiveBatch();
+
         $currentData = $database
-            ->getReference('current_data')
+            ->getReference(
+                "batches/$activeBatch/current_data"
+            )
             ->getValue();
 
         $python = env('PYTHON_PATH');
@@ -184,20 +219,33 @@ class SimulationController extends Controller
 
         $start = strrpos($output, '{');
 
+        if ($start === false) {
+
+            return response()->json([
+                'message' => 'Prediksi gagal'
+            ], 500);
+        }
+
         $json = substr($output, $start);
 
         $result = json_decode($json, true);
 
         $database
-            ->getReference('current_data/kematangan_pct')
+            ->getReference(
+                "batches/$activeBatch/current_data/kematangan_pct"
+            )
             ->set($result['kematangan_pct']);
 
         $database
-            ->getReference('current_data/sisa_hari')
+            ->getReference(
+                "batches/$activeBatch/current_data/sisa_hari"
+            )
             ->set($result['sisa_hari']);
 
         $database
-            ->getReference('current_data/prediction_status')
+            ->getReference(
+                "batches/$activeBatch/current_data/prediction_status"
+            )
             ->set('completed');
 
         return response()->json([

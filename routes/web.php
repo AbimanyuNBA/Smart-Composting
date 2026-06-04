@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BatchController;
 use App\Http\Controllers\SimulationController;
 use Illuminate\Support\Facades\Route;
 use Kreait\Firebase\Factory;
@@ -55,25 +56,40 @@ Route::get('/current-data-test', function () {
 
     $database = app('firebase.database');
 
-    $database->getReference('current_data')->set([
-        'timestamp' => now()->toDateTimeString(),
+    $system = $database
+        ->getReference('system')
+        ->getValue();
 
-        'hari' => 1,
-        'fase' => 'Mesofilik',
+    $activeBatch =
+        $system['active_batch'] ?? 'batch_001';
 
-        'suhu' => 28.1,
-        'kelembapan' => 85.5,
-        'ph' => 4.82,
-        'co2' => 596,
+    $database
+        ->getReference(
+            "batches/$activeBatch/current_data"
+        )
+        ->set([
+            'timestamp' => now()->toDateTimeString(),
 
-        'kipas' => 1,
-        'pengaduk' => 0,
+            'hari' => 1,
+            'fase' => 'Mesofilik',
 
-        'prediction_status' => 'pending'
-    ]);
+            'suhu' => 28.1,
+            'kelembapan' => 85.5,
+            'ph' => 4.82,
+            'co2' => 596,
 
-    return 'Current Data berhasil dikirim';
+            'kipas' => 1,
+            'pengaduk' => 0,
+
+            'kematangan_pct' => 5,
+            'sisa_hari' => 20,
+
+            'prediction_status' => 'completed'
+        ]);
+
+    return "Current Data berhasil dikirim ke $activeBatch";
 });
+
 
 //history test
 
@@ -81,16 +97,33 @@ Route::get('/history-test', function () {
 
     $database = app('firebase.database');
 
-    $currentData = $database
-        ->getReference('current_data')
+    $system = $database
+        ->getReference('system')
         ->getValue();
 
+    $activeBatch =
+        $system['active_batch'] ?? 'batch_001';
+
+    $currentData = $database
+        ->getReference(
+            "batches/$activeBatch/current_data"
+        )
+        ->getValue();
+
+    if (!$currentData) {
+
+        return "Current Data belum ada";
+    }
+
     $database
-        ->getReference('history')
+        ->getReference(
+            "batches/$activeBatch/history"
+        )
         ->push($currentData);
 
-    return 'History berhasil ditambahkan';
+    return "History berhasil ditambahkan ke $activeBatch";
 });
+
 
 
 //test baca data
@@ -119,6 +152,15 @@ Route::get('/csv-test', function () {
 //test masuk firebase
 Route::get('/csv-to-firebase-test', function () {
 
+    $database = app('firebase.database');
+
+    $system = $database
+        ->getReference('system')
+        ->getValue();
+
+    $activeBatch =
+        $system['active_batch'] ?? 'batch_001';
+
     $file = 'D:/POLMAN/PENELITIAN/DATASET/dataset_fermentasi_kompos-fix.csv';
 
     $handle = fopen($file, 'r');
@@ -145,16 +187,16 @@ Route::get('/csv-to-firebase-test', function () {
         'prediction_status' => 'pending'
     ];
 
-    $database = app('firebase.database');
-
-    // update current_data
     $database
-        ->getReference('current_data')
+        ->getReference(
+            "batches/$activeBatch/current_data"
+        )
         ->set($data);
 
-    // simpan history
     $database
-        ->getReference('history')
+        ->getReference(
+            "batches/$activeBatch/history"
+        )
         ->push($data);
 
     return response()->json($data);
@@ -165,20 +207,24 @@ Route::get('/simulate-next', function () {
 
     $database = app('firebase.database');
 
-    // Ambil current_row dari Firebase
     $system = $database
         ->getReference('system')
         ->getValue();
 
-    $currentRow = $system['current_row'];
+    $activeBatch =
+        $system['active_batch'] ?? 'batch_001';
 
-    // Baca CSV
-    $file = 'D:/POLMAN/PENELITIAN/DATASET/dataset_fermentasi_kompos-fix.csv';
+    $currentRow =
+        $system['current_row'];
 
-    $rows = array_map('str_getcsv', file($file));
+    $file =
+        'D:/POLMAN/PENELITIAN/DATASET/dataset_fermentasi_kompos-fix.csv';
 
-    // Baris pertama adalah header
-    $dataRow = $rows[$currentRow];
+    $rows =
+        array_map('str_getcsv', file($file));
+
+    $dataRow =
+        $rows[$currentRow];
 
     $data = [
         'timestamp' => $dataRow[0],
@@ -196,22 +242,24 @@ Route::get('/simulate-next', function () {
         'prediction_status' => 'pending'
     ];
 
-    // Update current_data
     $database
-        ->getReference('current_data')
+        ->getReference(
+            "batches/$activeBatch/current_data"
+        )
         ->set($data);
 
-    // Simpan history
     $database
-        ->getReference('history')
+        ->getReference(
+            "batches/$activeBatch/history"
+        )
         ->push($data);
 
-    // Naikkan current_row
     $database
         ->getReference('system/current_row')
         ->set($currentRow + 1);
 
     return response()->json([
+        'active_batch' => $activeBatch,
         'current_row' => $currentRow,
         'status' => 'success'
     ]);
@@ -263,7 +311,7 @@ Route::get(
 
 Route::get('/onnx-test', function () {
 
-     $python = env('PYTHON_PATH');
+    $python = env('PYTHON_PATH');
 
     $pythonFile =
         base_path('python/predict_onnx.py');
@@ -290,14 +338,31 @@ Route::get(
     [SimulationController::class, 'predict']
 );
 
-//reset simulator
-Route::get('/simulation/reset', function () {
 
-    $database = app('firebase.database');
 
-    $database
-        ->getReference('system/current_row')
-        ->set(1);
 
-    return 'Simulation Reset';
-});
+Route::get('/batch/create',[BatchController::class, 'create']);
+Route::get(
+    '/batch/start',
+    [BatchController::class, 'start']
+);
+
+Route::get(
+    '/batch/pause',
+    [BatchController::class, 'pause']
+);
+
+Route::get(
+    '/batch/resume',
+    [BatchController::class, 'resume']
+);
+
+Route::get(
+    '/batch/complete',
+    [BatchController::class, 'complete']
+);
+
+Route::get(
+    '/batch/cancel',
+    [BatchController::class, 'cancel']
+);
