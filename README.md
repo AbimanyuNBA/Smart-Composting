@@ -4,7 +4,7 @@ Pengembangan Sistem Smart Composting Berbasis Internet of Things dan Artificial 
 - Menggunakan laravel dengan firebase untuk berkomunikasi dengan Esp32 sebagai controller
 - Laravel disini berfungsi sebagai dashboard. monitoring, controller dan mencatat histori
 
-##Note
+## Note
 Jika:
 
 status: active
@@ -13,9 +13,9 @@ ESP32 mengirim data.
 
 Jika:
 status:
-paused
-completed
-cancelled
+- paused
+- completed
+- cancelled
 ESP32 berhenti mengirim data.
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
