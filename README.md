@@ -5,14 +5,11 @@ Pengembangan Sistem Smart Composting Berbasis Internet of Things dan Artificial 
 - Laravel disini berfungsi sebagai dashboard. monitoring, controller dan mencatat histori
 
 ## Note
-Jika:
-
-status: active
+Jika status: active
 
 ESP32 mengirim data.
 
-Jika:
-status:
+Jika status:
 - paused
 - completed
 - cancelled
