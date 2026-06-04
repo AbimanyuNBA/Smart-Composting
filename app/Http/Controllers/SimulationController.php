@@ -14,7 +14,7 @@ class SimulationController extends Controller
             ->getReference('system')
             ->getValue();
 
-        return $system['active_batch'] ?? 'batch_001';
+        return $system['active_batch'] ?? null;
     }
 
     public function dashboardData()
@@ -27,11 +27,16 @@ class SimulationController extends Controller
 
         $activeBatch = $this->getActiveBatch();
 
-        $currentData = $database
-            ->getReference(
-                "batches/$activeBatch/current_data"
-            )
-            ->getValue();
+        $currentData = [];
+
+        if ($activeBatch) {
+
+            $currentData = $database
+                ->getReference(
+                    "batches/$activeBatch/current_data"
+                )
+                ->getValue();
+        }
 
         return response()->json([
             'system' => $system,
@@ -49,20 +54,32 @@ class SimulationController extends Controller
 
         $activeBatch = $this->getActiveBatch();
 
-        $batchInfo = $database->getReference( "batches/$activeBatch")
-        ->getValue();
+        $batchInfo = [];
 
-        $currentData = $database
-            ->getReference(
-                "batches/$activeBatch/current_data"
-            )
-            ->getValue();
+        $currentData = [];
 
-        $history = $database
-            ->getReference(
-                "batches/$activeBatch/history"
-            )
-            ->getValue();
+        $history = [];
+
+        if ($activeBatch) {
+
+            $batchInfo = $database
+                ->getReference(
+                    "batches/$activeBatch"
+                )
+                ->getValue();
+
+            $currentData = $database
+                ->getReference(
+                    "batches/$activeBatch/current_data"
+                )
+                ->getValue();
+
+            $history = $database
+                ->getReference(
+                    "batches/$activeBatch/history"
+                )
+                ->getValue();
+        }
 
         $history = array_values($history ?? []);
 
@@ -77,7 +94,8 @@ class SimulationController extends Controller
 
         foreach ($history as $item) {
 
-            $labels[] = $item['hari'] ?? '';
+            $labels[] =
+                $item['hari'] ?? '';
 
             $suhuData[] =
                 $item['suhu'] ?? 0;
@@ -99,39 +117,17 @@ class SimulationController extends Controller
             'simulation-control',
             compact(
                 'system',
+                'activeBatch',
+                'batchInfo',
                 'currentData',
                 'labels',
                 'suhuData',
                 'kelembapanData',
                 'phData',
                 'co2Data',
-                'kematanganData',
-                'activeBatch',
-                'batchInfo'
+                'kematanganData'
             )
         );
-    }
-
-    public function start()
-    {
-        $database = app('firebase.database');
-
-        $database
-            ->getReference('system/simulation_running')
-            ->set(true);
-
-        return 'Simulation Started';
-    }
-
-    public function stop()
-    {
-        $database = app('firebase.database');
-
-        $database
-            ->getReference('system/simulation_running')
-            ->set(false);
-
-        return 'Simulation Stopped';
     }
 
     public function chartData()
@@ -140,11 +136,16 @@ class SimulationController extends Controller
 
         $activeBatch = $this->getActiveBatch();
 
-        $history = $database
-            ->getReference(
-                "batches/$activeBatch/history"
-            )
-            ->getValue();
+        $history = [];
+
+        if ($activeBatch) {
+
+            $history = $database
+                ->getReference(
+                    "batches/$activeBatch/history"
+                )
+                ->getValue();
+        }
 
         $history = array_values($history ?? []);
 
@@ -159,7 +160,8 @@ class SimulationController extends Controller
 
         foreach ($history as $item) {
 
-            $labels[] = $item['hari'] ?? '';
+            $labels[] =
+                $item['hari'] ?? '';
 
             $suhuData[] =
                 $item['suhu'] ?? 0;
@@ -193,11 +195,25 @@ class SimulationController extends Controller
 
         $activeBatch = $this->getActiveBatch();
 
+        if (!$activeBatch) {
+
+            return response()->json([
+                'message' => 'Tidak ada batch aktif'
+            ], 404);
+        }
+
         $currentData = $database
             ->getReference(
                 "batches/$activeBatch/current_data"
             )
             ->getValue();
+
+        if (!$currentData) {
+
+            return response()->json([
+                'message' => 'Data sensor belum tersedia'
+            ], 404);
+        }
 
         $python = env('PYTHON_PATH');
 

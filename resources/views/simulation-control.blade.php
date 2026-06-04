@@ -195,7 +195,18 @@
                             </th>
 
                             <td>
-                                {{ $batchInfo['status'] ?? '-' }}
+                                @if (($batchInfo['status'] ?? '') == 'draft')
+                                    <span class="badge bg-secondary">Draft</span>
+                                @elseif(($batchInfo['status'] ?? '') == 'active')
+                                    <span class="badge bg-success">Active</span>
+                                @elseif(($batchInfo['status'] ?? '') == 'paused')
+                                    <span class="badge bg-warning">Paused</span>
+                                @elseif(($batchInfo['status'] ?? '') == 'completed')
+                                    <span class="badge bg-primary">Completed</span>
+                                @elseif(($batchInfo['status'] ?? '') == 'cancelled')
+                                    <span class="badge bg-danger">Cancelled</span>
+                                @endif
+
                             </td>
                         </tr>
 
@@ -203,22 +214,7 @@
 
                     <table class="table">
 
-                        <tr>
-                            <th width="180">Status</th>
-                            <td id="statusValue">
 
-                                @if ($system['simulation_running'])
-                                    <span class="status-running">
-                                        RUNNING
-                                    </span>
-                                @else
-                                    <span class="status-stopped">
-                                        STOPPED
-                                    </span>
-                                @endif
-
-                            </td>
-                        </tr>
 
                         <tr>
                             <th>Current Row</th>

@@ -21,11 +21,29 @@ class SimulateCompostData extends Command
                 ->getValue();
 
             $activeBatch =
-            $system['active_batch'] ?? 'batch_001';
+                $system['active_batch'] ?? null;
 
-            if (!$system['simulation_running']) {
+            if (!$activeBatch) {
 
-                $this->info('Simulator STOPPED');
+                sleep(1);
+
+                continue;
+            }
+
+            $batchInfo = $database
+                ->getReference(
+                    "batches/$activeBatch"
+                )
+                ->getValue();
+
+            $status =
+                $batchInfo['status'] ?? 'draft';
+
+            if ($status !== 'active') {
+
+                $this->info(
+                    "Batch $activeBatch : $status"
+                );
 
                 sleep(1);
 
@@ -126,11 +144,11 @@ class SimulateCompostData extends Command
             // SIMPAN SEKALI SAJA
             // =====================
 
-             $database
-                ->getReference("batches/$activeBatch/current_data") ->set($data);
+            $database
+                ->getReference("batches/$activeBatch/current_data")->set($data);
 
             $database
-                ->getReference( "batches/$activeBatch/history")->push($data);
+                ->getReference("batches/$activeBatch/history")->push($data);
 
             $database
                 ->getReference('system/current_row')

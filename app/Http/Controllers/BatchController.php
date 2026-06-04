@@ -99,7 +99,6 @@ class BatchController extends Controller
             );
     }
 
-
     public function start()
     {
         $database = app('firebase.database');
@@ -138,21 +137,12 @@ class BatchController extends Controller
             )
             ->set(now()->timestamp);
 
-        // sementara masih pakai simulator lama
-
-        $database
-            ->getReference(
-                'system/simulation_running'
-            )
-            ->set(true);
-
         return redirect('/simulation-control')
             ->with(
                 'success',
                 "Batch $activeBatch berhasil dimulai"
             );
     }
-
 
     public function pause()
     {
@@ -180,12 +170,6 @@ class BatchController extends Controller
             )
             ->set('paused');
 
-        $database
-            ->getReference(
-                'system/simulation_running'
-            )
-            ->set(false);
-
         return redirect('/simulation-control')
             ->with(
                 'success',
@@ -206,7 +190,11 @@ class BatchController extends Controller
 
         if (!$activeBatch) {
 
-            return redirect('/simulation-control');
+            return redirect('/simulation-control')
+                ->with(
+                    'error',
+                    'Tidak ada batch aktif'
+                );
         }
 
         $database
@@ -214,12 +202,6 @@ class BatchController extends Controller
                 "batches/$activeBatch/status"
             )
             ->set('active');
-
-        $database
-            ->getReference(
-                'system/simulation_running'
-            )
-            ->set(true);
 
         return redirect('/simulation-control')
             ->with(
@@ -266,12 +248,6 @@ class BatchController extends Controller
             )
             ->set(now()->timestamp);
 
-        $database
-            ->getReference(
-                'system/simulation_running'
-            )
-            ->set(false);
-
         return redirect('/simulation-control')
             ->with(
                 'success',
@@ -316,12 +292,6 @@ class BatchController extends Controller
                 "batches/$activeBatch/end_timestamp"
             )
             ->set(now()->timestamp);
-
-        $database
-            ->getReference(
-                'system/simulation_running'
-            )
-            ->set(false);
 
         return redirect('/simulation-control')
             ->with(
