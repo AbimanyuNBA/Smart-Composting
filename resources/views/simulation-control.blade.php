@@ -517,7 +517,6 @@
             }
         }
 
-        // Interval Loop Sinkronisasi
         setInterval(refreshDashboard, 2000);
         setInterval(refreshCharts, 5000);
     </script>

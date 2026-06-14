@@ -19,9 +19,16 @@ Route::get(
 );
 
 Route::get(
-    '/dashboard-data',
-    [SimulationController::class, 'dashboardData']
+    '/dashboard',
+    [SimulationController::class, 'index']
 );
+
+Route::get(
+    '/batch/create',
+    [SimulationController::class, 'create']
+);
+
+
 
 Route::get(
     '/chart-data',
