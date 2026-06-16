@@ -69,3 +69,6 @@ Route::get(
     '/batch/cancel',
     [BatchController::class, 'cancel']
 );
+
+
+Route::get('/dashboard-data', [SimulationController::class, 'dashboardData']);
