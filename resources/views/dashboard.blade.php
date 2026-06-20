@@ -328,9 +328,7 @@
             document.getElementById('pengadukValue').className = current.pengaduk == 1 ? 'badge bg-success text-white small' : 'badge bg-light text-dark border small';
             document.getElementById('em4Toggle').checked = current.pengaduk == 1;
 
-            document.getElementById('statusValue').innerHTML = system.simulation_running ?
-                '<span class="badge bg-success"><i class="bi bi-cpu-fill me-1"></i> RUNNING</span>' :
-                '<span class="badge bg-danger"><i class="bi bi-stop-fill me-1"></i> STOPPED</span>';
+            
 
             const predStatus = current.prediction_status || 'completed';
             document.getElementById('predictionStatus').innerHTML = predStatus;

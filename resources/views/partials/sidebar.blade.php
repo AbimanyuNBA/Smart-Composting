@@ -17,6 +17,6 @@
     
     <div style="flex-grow: 1;"></div>
     
-    <a href="#" class="icon-box"><i class="bi bi-gear"></i></a>
-    <a href="#" class="icon-box"><i class="bi bi-person-circle"></i></a>
+    <!-- <a href="#" class="icon-box"><i class="bi bi-gear"></i></a>
+    <a href="#" class="icon-box"><i class="bi bi-person-circle"></i></a> -->
 </div>
