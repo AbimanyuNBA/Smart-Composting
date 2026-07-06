@@ -4,135 +4,182 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+
 class SimulationController extends Controller
 {
+
+
+    private function database()
+    {
+        return app('firebase.database');
+    }
+
+
+
     private function getActiveBatch()
     {
-        $database = app('firebase.database');
 
-        $system = $database
+        $system =
+            $this->database()
             ->getReference('system')
             ->getValue();
 
-        return $system['active_batch'] ?? null;
-    }
 
-
-    // ===============================
-// REALTIME CARD + TABLE
-// ===============================
-public function dashboardData()
-{
-    $database = app('firebase.database');
-
-
-    $system = $database
-        ->getReference('system')
-        ->getValue();
-
-
-    $activeBatch =
-        $this->getActiveBatch();
-
-
-
-    $currentData = [];
-
-    $history = [];
-
-
-
-    if ($activeBatch) {
-
-
-        // DATA TERBARU SENSOR
-
-        $currentData = $database
-            ->getReference(
-                "batches/$activeBatch/current_data"
-            )
-            ->getValue();
-
-
-
-        // HISTORY SENSOR
-
-        $history = $database
-            ->getReference(
-                "batches/$activeBatch/history"
-            )
-            ->getValue();
+        return
+            $system['active_batch'] ?? null;
 
     }
 
 
 
 
-    // =====================
-    // FORMAT HISTORY TABLE
-    // =====================
 
 
-    $history =
-        array_values($history ?? []);
+    // ====================================
+    // REALTIME DASHBOARD
+    // SENSOR + CONTROL + TABLE
+    // ====================================
 
-
-
-    // ambil 20 terakhir
-
-    $history =
-        array_slice(
-            $history,
-            -10
-        );
-
-
-
-    // terbaru tampil paling atas
-
-    $history =
-        array_reverse($history);
-
-
-
-
-
-    return response()->json([
-
-
-        'system' =>
-            $system,
-
-
-        'currentData' =>
-            $currentData,
-
-
-        // untuk tabel realtime
-        'history' =>
-            $history
-
-
-    ]);
-}
-
-
-
-    // ===============================
-    // HALAMAN DASHBOARD
-    // ===============================
-    public function index()
+    public function dashboardData()
     {
-        $database = app('firebase.database');
+
+        $database =
+            $this->database();
 
 
-        $system = $database
+
+        $system =
+            $database
             ->getReference('system')
             ->getValue();
+
+
+
+        // tombol manual
+        $control =
+            $database
+            ->getReference('control')
+            ->getValue();
+
 
 
         $activeBatch =
             $this->getActiveBatch();
+
+
+
+        $currentData = [];
+
+        $history = [];
+
+
+
+        if ($activeBatch) {
+
+
+            // feedback alat / sensor
+
+            $currentData =
+                $database
+                ->getReference(
+                    "batches/$activeBatch/current_data"
+                )
+                ->getValue();
+
+
+
+
+            // log sensor
+
+            $history =
+                $database
+                ->getReference(
+                    "batches/$activeBatch/history"
+                )
+                ->getValue();
+
+        }
+
+
+
+        $history =
+            array_values(
+                $history ?? []
+            );
+
+
+
+        // tabel 10 terbaru
+
+        $tableHistory =
+            array_reverse(
+
+                array_slice(
+                    $history,
+                    -10
+                )
+
+            );
+
+
+
+
+
+        return response()
+        ->json([
+
+
+            'system' =>
+                $system,
+
+
+            // command manual
+            'control' =>
+                $control,
+
+
+            // status alat asli
+            'currentData' =>
+                $currentData,
+
+
+            // tabel
+            'history' =>
+                $tableHistory
+
+        ]);
+
+    }
+
+
+
+
+
+
+
+    // ====================================
+    // HALAMAN DASHBOARD
+    // ====================================
+
+
+    public function index()
+    {
+
+        $database =
+            $this->database();
+
+
+
+        $system =
+            $database
+            ->getReference('system')
+            ->getValue();
+
+
+
+        $activeBatch =
+            $this->getActiveBatch();
+
 
 
         $batchInfo = [];
@@ -142,92 +189,115 @@ public function dashboardData()
         $history = [];
 
 
+
+
         if ($activeBatch) {
 
 
-            $batchInfo = $database
+
+            $batchInfo =
+                $database
                 ->getReference(
                     "batches/$activeBatch"
                 )
                 ->getValue();
 
 
-            $currentData = $database
+
+            $currentData =
+                $database
                 ->getReference(
                     "batches/$activeBatch/current_data"
                 )
                 ->getValue();
 
 
-            $history = $database
+
+
+            $history =
+                $database
                 ->getReference(
                     "batches/$activeBatch/history"
                 )
                 ->getValue();
+
         }
 
 
-        // ambil data terakhir
-        $history =
-            array_values($history ?? []);
 
 
         $history =
-            array_slice($history, -10);
+            array_values(
+                $history ?? []
+            );
 
 
-        // untuk tabel awal
-        // terbaru berada di atas
-        $tableHistory =
-            array_reverse($history);
+        $history =
+            array_reverse(
+                array_slice($history,-10)
+            );
 
 
 
         $labels = [];
+
         $timestamps = [];
+
         $suhuData = [];
+
         $kelembapanData = [];
+
         $phData = [];
+
         $co2Data = [];
+
         $kematanganData = [];
 
 
-        foreach ($tableHistory as $item) {
+
+        foreach($history as $item){
 
 
             $labels[] =
                 $item['hari'] ?? '';
 
 
+
             $timestamps[] =
                 $item['timestamp'] ?? '-';
+
 
 
             $suhuData[] =
                 $item['suhu'] ?? 0;
 
 
+
             $kelembapanData[] =
                 $item['kelembapan'] ?? 0;
+
 
 
             $phData[] =
                 $item['ph'] ?? 0;
 
 
+
             $co2Data[] =
                 $item['co2'] ?? 0;
 
 
+
             $kematanganData[] =
                 $item['kematangan_pct'] ?? 0;
+
         }
+
 
 
 
         return view(
             'dashboard',
-
             compact(
 
                 'system',
@@ -251,33 +321,47 @@ public function dashboardData()
                 'co2Data',
 
                 'kematanganData'
+
             )
         );
+
     }
 
 
 
 
 
-    // ===============================
-    // REALTIME CHART + TABLE
-    // ===============================
+
+
+
+
+    // ====================================
+    // CHART REALTIME
+    // ====================================
+
+
     public function chartData()
     {
-        $database = app('firebase.database');
+
+
+        $database =
+            $this->database();
 
 
         $activeBatch =
             $this->getActiveBatch();
 
 
+
         $history = [];
 
 
-        if ($activeBatch) {
+
+        if($activeBatch){
 
 
-            $history = $database
+            $history =
+                $database
                 ->getReference(
                     "batches/$activeBatch/history"
                 )
@@ -287,252 +371,153 @@ public function dashboardData()
 
 
 
+
         $history =
-            array_values($history ?? []);
+            array_values(
+                $history ?? []
+            );
 
 
 
-        // 20 data terakhir
+        // grafik harus urutan waktu naik
+
         $history =
-            array_slice($history, -10);
+            array_slice(
+                $history,
+                -10
+            );
 
 
 
-        // khusus tabel
-        // terbaru tampil atas
-        $tableHistory =
-            array_reverse($history);
-
-
-
-        $labels = [];
-        $suhuData = [];
-        $kelembapanData = [];
-        $phData = [];
-        $co2Data = [];
-        $kematanganData = [];
-
-
-
-        // grafik tetap urutan waktu naik
-        foreach ($history as $item) {
-
-
-            $labels[] =
-                $item['hari'] ?? '';
-
-
-            $suhuData[] =
-                $item['suhu'] ?? 0;
-
-
-            $kelembapanData[] =
-                $item['kelembapan'] ?? 0;
-
-
-            $phData[] =
-                $item['ph'] ?? 0;
-
-
-            $co2Data[] =
-                $item['co2'] ?? 0;
-
-
-            $kematanganData[] =
-                $item['kematangan_pct'] ?? 0;
-
-        }
-
-
-
-        return response()->json([
+        return response()
+        ->json([
 
 
             'labels' =>
-                $labels,
+                array_column(
+                    $history,
+                    'hari'
+                ),
 
 
             'suhuData' =>
-                $suhuData,
+                array_column(
+                    $history,
+                    'suhu'
+                ),
 
 
             'kelembapanData' =>
-                $kelembapanData,
+                array_column(
+                    $history,
+                    'kelembapan'
+                ),
 
 
             'phData' =>
-                $phData,
+                array_column(
+                    $history,
+                    'ph'
+                ),
 
 
             'co2Data' =>
-                $co2Data,
+                array_column(
+                    $history,
+                    'co2'
+                ),
 
 
             'kematanganData' =>
-                $kematanganData,
-
-
-            // untuk tabel realtime
-            'history' =>
-                $tableHistory
+                array_column(
+                    $history,
+                    'kematangan_pct'
+                )
 
         ]);
+
     }
 
 
 
 
 
-    // ===============================
-    // PREDIKSI ONNX
-    // ===============================
-    public function predict()
+
+
+
+    // ====================================
+    // UPDATE DEVICE CONTROL
+    // ====================================
+
+    public function deviceControl(Request $request)
     {
 
+
         $database =
-            app('firebase.database');
-
-
-        $activeBatch =
-            $this->getActiveBatch();
+            $this->database();
 
 
 
-        if (!$activeBatch) {
+
+        if($request->type == 'kipas'){
 
 
-            return response()->json([
-
-                'message' =>
-                    'Tidak ada batch aktif'
-
-            ],404);
-        }
-
-
-
-        $currentData =
             $database
-                ->getReference(
-                    "batches/$activeBatch/current_data"
-                )
-                ->getValue();
-
-
-
-        if (!$currentData) {
-
-
-            return response()->json([
-
-                'message' =>
-                    'Data sensor belum tersedia'
-
-            ],404);
+            ->getReference(
+                'control/kipas_manual'
+            )
+            ->set(
+                (int)$request->value
+            );
 
         }
 
 
 
-        $python =
-            env('PYTHON_PATH');
 
 
+        if($request->type == 'pengaduk'){
 
-        $pythonFile =
-            base_path(
-                'python/predict_onnx.py'
+
+            $database
+            ->getReference(
+                'control/pengaduk_manual'
+            )
+            ->set(
+                (int)$request->value
             );
 
-
-
-        $command =
-            "\"$python\" \"$pythonFile\" "
-
-            .$currentData['hari']." "
-
-            .$currentData['suhu']." "
-
-            .$currentData['kelembapan']." "
-
-            .$currentData['ph']." "
-
-            .$currentData['co2']." "
-
-            .$currentData['pengaduk']." "
-
-            .$currentData['kipas']
-
-            ." 2>&1";
-
-
-
-        $output =
-            shell_exec($command);
-
-
-
-        $start =
-            strrpos($output,'{');
-
-
-
-        if ($start === false) {
-
-
-            return response()->json([
-
-                'message'=>
-                    'Prediksi gagal'
-
-            ],500);
         }
 
 
 
-        $result =
-            json_decode(
-                substr($output,$start),
-                true
-            );
 
 
 
-        $database
+        if($request->type == 'mode'){
+
+
+            $database
             ->getReference(
-                "batches/$activeBatch/current_data/kematangan_pct"
+                'control/mode'
             )
             ->set(
-                $result['kematangan_pct']
+                $request->value
             );
 
-
-        $database
-            ->getReference(
-                "batches/$activeBatch/current_data/sisa_hari"
-            )
-            ->set(
-                $result['sisa_hari']
-            );
-
-
-        $database
-            ->getReference(
-                "batches/$activeBatch/current_data/prediction_status"
-            )
-            ->set('completed');
+        }
 
 
 
-        return response()->json([
-
-            'message'=>
-                'Prediksi berhasil disimpan',
 
 
-            'result'=>
-                $result
+        return response()
+        ->json([
+
+            'success'=>true
 
         ]);
+
     }
+
 }

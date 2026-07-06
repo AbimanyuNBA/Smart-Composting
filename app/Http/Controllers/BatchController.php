@@ -39,7 +39,7 @@ class BatchController extends Controller
                 )
             ) {
 
-                return redirect('/simulation-control')
+                return redirect('/')
                     ->with(
                         'error',
                         "Batch $activeBatch belum selesai"
@@ -92,7 +92,7 @@ class BatchController extends Controller
             )
             ->set(1);
 
-        return redirect('/simulation-control')
+        return redirect('/')
             ->with(
                 'success',
                 "Batch baru berhasil dibuat: $batchId"
@@ -112,7 +112,7 @@ class BatchController extends Controller
 
         if (!$activeBatch) {
 
-            return redirect('/simulation-control')
+            return redirect('/')
                 ->with(
                     'error',
                     'Tidak ada batch aktif'
@@ -137,7 +137,7 @@ class BatchController extends Controller
             )
             ->set(now()->timestamp);
 
-        return redirect('/simulation-control')
+        return redirect('/')
             ->with(
                 'success',
                 "Batch $activeBatch berhasil dimulai"
@@ -157,7 +157,7 @@ class BatchController extends Controller
 
         if (!$activeBatch) {
 
-            return redirect('/simulation-control')
+            return redirect('/')
                 ->with(
                     'error',
                     'Tidak ada batch aktif'
@@ -170,7 +170,7 @@ class BatchController extends Controller
             )
             ->set('paused');
 
-        return redirect('/simulation-control')
+        return redirect('/')
             ->with(
                 'success',
                 "Batch $activeBatch berhasil di-pause"
@@ -190,7 +190,7 @@ class BatchController extends Controller
 
         if (!$activeBatch) {
 
-            return redirect('/simulation-control')
+            return redirect('/')
                 ->with(
                     'error',
                     'Tidak ada batch aktif'
@@ -203,7 +203,7 @@ class BatchController extends Controller
             )
             ->set('active');
 
-        return redirect('/simulation-control')
+        return redirect('/')
             ->with(
                 'success',
                 "Batch $activeBatch berhasil di-resume"
@@ -223,7 +223,7 @@ class BatchController extends Controller
 
         if (!$activeBatch) {
 
-            return redirect('/simulation-control')
+            return redirect('/')
                 ->with(
                     'error',
                     'Tidak ada batch aktif'
@@ -248,7 +248,7 @@ class BatchController extends Controller
             )
             ->set(now()->timestamp);
 
-        return redirect('/simulation-control')
+        return redirect('/')
             ->with(
                 'success',
                 "Batch $activeBatch berhasil diselesaikan"
@@ -268,7 +268,7 @@ class BatchController extends Controller
 
         if (!$activeBatch) {
 
-            return redirect('/simulation-control')
+            return redirect('/')
                 ->with(
                     'error',
                     'Tidak ada batch aktif'
@@ -293,7 +293,7 @@ class BatchController extends Controller
             )
             ->set(now()->timestamp);
 
-        return redirect('/simulation-control')
+        return redirect('/')
             ->with(
                 'success',
                 "Batch $activeBatch berhasil dibatalkan"

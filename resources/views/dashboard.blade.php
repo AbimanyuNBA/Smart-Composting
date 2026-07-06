@@ -148,61 +148,205 @@
         </div>
 
         <div class="col-xl-4 col-lg-5">
-            <div class="card-modern d-flex flex-column justify-content-between">
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0"><i class="bi bi-sliders text-muted"></i> Device Control & Status</h5>
-                        <span id="statusValue" class="small fw-bold"></span>
+
+            <div class="card-modern">
+
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-cpu"></i>
+                    Device Control
+                </h5>
+
+
+                <!-- MODE -->
+                <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
+
+                    <div class="fw-bold mb-2">
+                        Mode Operasi
                     </div>
 
-                    <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0 fw-bold">Aerasi (Blower)</h6>
-                            <div class="d-flex align-items-center gap-2">
-                                <span id="kipasValue" class="badge bg-light text-dark border small">OFF</span>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" id="blowerToggle"
-                                        {{ $currentData['kipas'] ?? 0 ? 'checked' : '' }}>
-                                </div>
-                            </div>
+
+                    <div class="d-flex gap-4">
+
+                        <div class="form-check">
+
+                            <input class="form-check-input" type="radio" name="mode" id="modeAuto" checked>
+
+                            <label class="form-check-label">
+                                AUTO
+                            </label>
+
                         </div>
-                        <div class="d-flex gap-3 text-muted small">
-                            <div class="form-check"><input class="form-check-input" type="radio" name="bMode"
-                                    id="bM" checked><label class="form-check-label" for="bM">Manual</label>
-                            </div>
-                            <div class="form-check"><input class="form-check-input" type="radio" name="bMode"
-                                    id="bA"><label class="form-check-label" for="bA">Auto</label></div>
+
+
+
+                        <div class="form-check">
+
+                            <input class="form-check-input" type="radio" name="mode" id="modeManual">
+
+                            <label class="form-check-label">
+                                MANUAL
+                            </label>
+
                         </div>
+
                     </div>
 
-                    <div class="border rounded-4 p-3 bg-white shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0 fw-bold">Pengaduk</h6>
-                            <div class="d-flex align-items-center gap-2">
-                                <span id="pengadukValue" class="badge bg-light text-dark border small">OFF</span>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" id="em4Toggle"
-                                        {{ $currentData['pengaduk'] ?? 0 ? 'checked' : '' }}>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-3 text-muted small">
-                            <div class="form-check"><input class="form-check-input" type="radio" name="eMode"
-                                    id="eM" checked><label class="form-check-label" for="eM">Manual</label>
-                            </div>
-                            <div class="form-check"><input class="form-check-input" type="radio" name="eMode"
-                                    id="eA"><label class="form-check-label" for="eA">Auto</label></div>
-                        </div>
-                    </div>
                 </div>
 
-                <div class="border-top pt-2 mt-2 text-muted small d-flex justify-content-between">
-                    <div>Row Aktif: <span id="currentRowValue"
-                            class="fw-bold text-dark">{{ $system['current_row'] ?? 0 }}</span></div>
-                    <div>Interval: <span class="fw-bold text-dark">{{ $system['simulation_interval'] ?? 0 }} Detik</span>
+
+
+
+
+                <!-- BLOWER -->
+                <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
+
+
+                    <div class="d-flex justify-content-between">
+
+
+                        <h6 class="fw-bold">
+                            🌬 Aerasi (Blower)
+                        </h6>
+
+
+                        <!-- STATUS SENSOR -->
+
+                        <span id="kipasValue" class="badge bg-success">
+
+                            ON
+
+                        </span>
+
+
                     </div>
+
+
+
+                    <small class="text-muted">
+
+                        Status aktual perangkat
+
+                    </small>
+
+
+
+                    <hr>
+
+
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+
+                        <span>
+                            Manual Command
+                        </span>
+
+
+                        <div class="form-check form-switch">
+
+                            <input class="form-check-input" type="checkbox" id="blowerToggle">
+
+                        </div>
+
+
+                    </div>
+
+
                 </div>
+
+
+
+
+
+
+                <!-- PENGADUK -->
+
+                <div class="border rounded-4 p-3 bg-white shadow-sm">
+
+
+                    <div class="d-flex justify-content-between">
+
+
+                        <h6 class="fw-bold">
+                            🔄 Pengaduk
+                        </h6>
+
+
+                        <span id="pengadukValue" class="badge bg-secondary">
+
+                            OFF
+
+                        </span>
+
+
+                    </div>
+
+
+
+                    <small class="text-muted">
+
+                        Status aktual perangkat
+
+                    </small>
+
+
+
+                    <hr>
+
+
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+
+                        <span>
+                            Manual Command
+                        </span>
+
+
+
+                        <div class="form-check form-switch">
+
+
+                            <input class="form-check-input" type="checkbox" id="pengadukToggle">
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+
+
+
+
+                <div class="border-top mt-3 pt-2 small text-muted d-flex justify-content-between">
+
+
+                    <div>
+                        Row Aktif:
+                        <b id="currentRowValue">
+                            {{ $system['current_row'] ?? 0 }}
+                        </b>
+                    </div>
+
+
+                    <div>
+                        Interval:
+                        <b>
+                            {{ $system['simulation_interval'] ?? 0 }} Detik
+                        </b>
+                    </div>
+
+
+                </div>
+
+
             </div>
+
         </div>
     </div>
 
@@ -339,387 +483,224 @@
             }
         });
 
-        // Realtime Sync Data (Interval Dashboard)
-        async function refreshDashboard() {
-            try {
-                const response = await fetch('/dashboard-data');
-                const data = await response.json();
-                const current = data.currentData || {};
-                const system = data.system || {};
-
-                if (Object.keys(current).length === 0) return;
-
-                document.getElementById('suhuValue').innerHTML = (current.suhu || 0) + '<small>°C</small>';
-                document.getElementById('kelembapanValue').innerHTML = (current.kelembapan || 0) + '<small>%</small>';
-                document.getElementById('phValue').innerHTML = current.ph || 0;
-                document.getElementById('co2Value').innerHTML = (current.co2 || 0) + '<small>ppm</small>';
-
-                document.getElementById('timestampValue').innerHTML = current.timestamp ?? '-';
-                document.getElementById('hariValue').innerHTML = current.hari ?? '-';
-                document.getElementById('faseValue').innerHTML = current.fase ?? '-';
-
-                const kematangan = current.kematangan_pct || 0;
-                document.getElementById('kematanganValue').innerHTML = kematangan + ' %';
-                document.getElementById('kematanganBar').style.width = kematangan + '%';
-
-                document.getElementById('sisaHariValue').innerHTML = current.sisa_hari ?? '-';
-                document.getElementById('currentRowValue').innerHTML = system.current_row || 0;
-
-                document.getElementById('kipasValue').innerHTML = current.kipas == 1 ? 'ON' : 'OFF';
-                document.getElementById('kipasValue').className = current.kipas == 1 ?
-                    'badge bg-success text-white small' : 'badge bg-light text-dark border small';
-                document.getElementById('blowerToggle').checked = current.kipas == 1;
-
-                document.getElementById('pengadukValue').innerHTML = current.pengaduk == 1 ? 'ON' : 'OFF';
-                document.getElementById('pengadukValue').className = current.pengaduk == 1 ?
-                    'badge bg-success text-white small' : 'badge bg-light text-dark border small';
-                document.getElementById('em4Toggle').checked = current.pengaduk == 1;
-
-
-
-                const predStatus = current.prediction_status || 'completed';
-                document.getElementById('predictionStatus').innerHTML = predStatus;
-                document.getElementById('predictionStatus').className = predStatus === 'completed' ?
-                    'badge bg-success small' : 'badge bg-danger small';
-
-            } catch (error) {
-                console.error("Gagal sinkronisasi data:", error);
-            }
-        }
-
        // ===============================
 // REALTIME DASHBOARD + TABLE
 // ===============================
 
-async function refreshDashboard()
-{
-
-try {
-
-
-console.log(
-    "Refresh Dashboard + Table"
-);
-
-
-
-const response =
-    await fetch(
-        '/dashboard-data?t=' + Date.now()
-    );
-
-
-
-const data =
-    await response.json();
-
-
-
-const current =
-    data.currentData || {};
-
-
-
-const system =
-    data.system || {};
-
-
-
-
-
-// =====================
-// CARD SENSOR
-// =====================
-
-
-document
-.getElementById('suhuValue')
-.innerHTML =
-current.suhu +
-'<small>°C</small>';
-
-
-
-document
-.getElementById('kelembapanValue')
-.innerHTML =
-current.kelembapan +
-'<small>%</small>';
-
-
-
-document
-.getElementById('co2Value')
-.innerHTML =
-current.co2 +
-'<small>ppm</small>';
-
-
-
-document
-.getElementById('phValue')
-.innerHTML =
-current.ph;
-
-
-
-document
-.getElementById('timestampValue')
-.innerHTML =
-current.timestamp;
-
-
-
-document
-.getElementById('faseValue')
-.innerHTML =
-current.fase;
-
-
-
-document
-.getElementById('hariValue')
-.innerHTML =
-current.hari;
-
-
-
-document
-.getElementById('currentRowValue')
-.innerHTML =
-system.current_row;
-
-
-
-
-// =====================
-// AI
-// =====================
-
-
-let kematangan =
-current.kematangan_pct ?? 0;
-
-
-
-document
-.getElementById('kematanganValue')
-.innerHTML =
-kematangan + ' %';
-
-
-
-document
-.getElementById('kematanganBar')
-.style.width =
-kematangan + '%';
-
-
-
-document
-.getElementById('sisaHariValue')
-.innerHTML =
-current.sisa_hari;
-
-
-
-
-// =====================
-// ACTUATOR
-// =====================
-
-
-document
-.getElementById('kipasValue')
-.innerHTML =
-current.kipas == 1
-? 'ON'
-: 'OFF';
-
-
-
-document
-.getElementById('blowerToggle')
-.checked =
-current.kipas == 1;
-
-
-
-
-document
-.getElementById('pengadukValue')
-.innerHTML =
-current.pengaduk == 1
-? 'ON'
-: 'OFF';
-
-
-
-document
-.getElementById('em4Toggle')
-.checked =
-current.pengaduk == 1;
-
-
-
-
-
-
-// =====================
-// TABLE REALTIME
-// =====================
-
-
-let html = "";
-
-
-
-data.history.forEach(
-
-function(item,index){
-
-
-html += `
-
-
-<tr>
-
-
-<td>${index+1}</td>
-
-
-<td>
-Hari ${item.hari}
-</td>
-
-
-<td>
-${item.timestamp}
-</td>
-
-
-<td>
-${item.suhu}°C
-</td>
-
-
-<td>
-${item.kelembapan}%
-</td>
-
-
-<td>
-${item.co2} ppm
-</td>
-
-
-<td>
-${item.ph}
-</td>
-
-
-
-<td>
-
-<span class="badge bg-light text-dark border">
-
-${item.fase}
-
-</span>
-
-</td>
-
-
-</tr>
-
-
-`;
-
-
-});
-
-
-
-
-document
-.getElementById(
-'tableBody'
-)
-.innerHTML = html;
-
-
-
-
-
-}catch(error){
-
-
-console.log(
-"Realtime Error",
-error
-);
-
-
-}
-
-}
-
-
-
-
-
-
-
-// ===============================
-// REALTIME CHART
-// ===============================
-
-async function refreshCharts()
-{
+async function refreshDashboard() {
 
     try {
 
-
         const response =
-            await fetch(
-                '/chart-data?t=' + Date.now()
-            );
+            await fetch('/dashboard-data?t=' + Date.now());
 
 
         const data =
             await response.json();
 
 
-
-        mainChart.data.labels =
-            data.labels;
-
+        const current =
+            data.currentData || {};
 
 
-        mainChart
-        .data
-        .datasets[0]
-        .data =
-            data.suhuData;
+        const system =
+            data.system || {};
 
 
-
-        mainChart
-        .data
-        .datasets[1]
-        .data =
-            data.co2Data;
+        const control =
+            data.control || {};
 
 
 
-        mainChart.update();
+        // =====================
+        // SENSOR CARD
+        // =====================
+
+        suhuValue.innerHTML =
+            current.suhu + '<small>°C</small>';
 
 
-    }catch(error)
-    {
+        kelembapanValue.innerHTML =
+            current.kelembapan + '<small>%</small>';
+
+
+        co2Value.innerHTML =
+            current.co2 + '<small>ppm</small>';
+
+
+        phValue.innerHTML =
+            current.ph;
+
+
+        timestampValue.innerHTML =
+            current.timestamp;
+
+
+        faseValue.innerHTML =
+            current.fase;
+
+
+        hariValue.innerHTML =
+            current.hari;
+
+
+        currentRowValue.innerHTML =
+            system.current_row;
+
+
+
+        // =====================
+        // AI
+        // =====================
+
+        let kematangan =
+            current.kematangan_pct ?? 0;
+
+
+        kematanganValue.innerHTML =
+            kematangan + ' %';
+
+
+        kematanganBar.style.width =
+            kematangan + '%';
+
+
+        sisaHariValue.innerHTML =
+            current.sisa_hari;
+
+
+
+        // =====================
+        // STATUS AKTUAL DEVICE
+        // dari current_data
+        // =====================
+
+
+        kipasValue.innerHTML =
+            current.kipas == 1
+            ? 'ON'
+            : 'OFF';
+
+
+        kipasValue.className =
+            current.kipas == 1
+            ?
+            'badge bg-success'
+            :
+            'badge bg-secondary';
+
+
+
+        pengadukValue.innerHTML =
+            current.pengaduk == 1
+            ? 'ON'
+            : 'OFF';
+
+
+        pengadukValue.className =
+            current.pengaduk == 1
+            ?
+            'badge bg-success'
+            :
+            'badge bg-secondary';
+
+
+
+        // =====================
+        // MANUAL COMMAND
+        // dari Firebase control
+        // =====================
+
+
+        blowerToggle.checked =
+            control.kipas_manual == 1;
+
+
+        pengadukToggle.checked =
+            control.pengaduk_manual == 1;
+
+
+        modeAuto.checked =
+            control.mode == 'auto';
+
+
+        modeManual.checked =
+            control.mode == 'manual';
+
+
+
+
+        // =====================
+        // TABLE LOG
+        // =====================
+
+
+        let html = "";
+
+
+        (data.history || []).forEach(
+
+            function(item,index){
+
+
+            html += `
+
+            <tr>
+
+                <td>${index+1}</td>
+
+                <td>
+                    Hari ${item.hari}
+                </td>
+
+                <td>
+                    ${item.timestamp}
+                </td>
+
+                <td>
+                    ${item.suhu}°C
+                </td>
+
+                <td>
+                    ${item.kelembapan}%
+                </td>
+
+                <td>
+                    ${item.co2} ppm
+                </td>
+
+                <td>
+                    ${item.ph}
+                </td>
+
+                <td>
+
+                <span class="badge bg-light text-dark border">
+
+                    ${item.fase}
+
+                </span>
+
+                </td>
+
+
+            </tr>
+
+            `;
+
+        });
+
+
+
+        tableBody.innerHTML =
+            html;
+
+
+
+    } catch(error){
 
         console.log(
-            "Chart Error",
+            "Realtime Error",
             error
         );
 
@@ -731,26 +712,247 @@ async function refreshCharts()
 
 
 
+        // ===============================
+        // REALTIME CHART
+        // ===============================
 
-// ===============================
-// INTERVAL
-// ===============================
+        async function refreshCharts() {
 
-setInterval(
-    refreshDashboard,
-    2000
-);
+            try {
 
 
-setInterval(
-    refreshCharts,
-    5000
-);
+                const response =
+                    await fetch(
+                        '/chart-data?t=' + Date.now()
+                    );
+
+
+                const data =
+                    await response.json();
 
 
 
-refreshDashboard();
+                mainChart.data.labels =
+                    data.labels;
 
-refreshCharts();
+
+
+                mainChart
+                    .data
+                    .datasets[0]
+                    .data =
+                    data.suhuData;
+
+
+
+                mainChart
+                    .data
+                    .datasets[1]
+                    .data =
+                    data.co2Data;
+
+
+
+                mainChart.update();
+
+
+            } catch (error) {
+
+                console.log(
+                    "Chart Error",
+                    error
+                );
+
+            }
+
+        }
+
+
+
+
+
+
+        // ===============================
+        // INTERVAL
+        // ===============================
+
+        setInterval(
+            refreshDashboard,
+            2000
+        );
+
+
+        setInterval(
+            refreshCharts,
+            5000
+        );
+
+
+
+        refreshDashboard();
+
+        refreshCharts();
+
+
+
+
+        document
+            .getElementById('blowerToggle')
+            .addEventListener(
+                'change',
+                function() {
+
+
+                    fetch('/device-control', {
+
+                        method: 'POST',
+
+                        headers: {
+
+                            'Content-Type': 'application/json',
+
+                            'X-CSRF-TOKEN': document
+                                .querySelector(
+                                    'meta[name="csrf-token"]'
+                                )
+                                .content
+
+                        },
+
+
+                        body: JSON.stringify({
+
+                            type: 'kipas',
+
+                            value: this.checked ? 1 : 0
+
+                        })
+
+
+                    });
+
+
+                });
+
+
+
+        document
+            .getElementById('pengadukToggle')
+            .addEventListener(
+                'change',
+                function() {
+
+
+                    fetch('/device-control', {
+
+                        method: 'POST',
+
+
+                        headers: {
+
+
+                            'Content-Type': 'application/json',
+
+
+                            'X-CSRF-TOKEN': document
+                                .querySelector(
+                                    'meta[name="csrf-token"]'
+                                )
+                                .content
+
+                        },
+
+
+
+                        body: JSON.stringify({
+
+
+                            type: 'pengaduk',
+
+
+                            value: this.checked ? 1 : 0
+
+
+                        })
+
+
+                    });
+
+
+                });
+
+
+        document
+            .getElementById('modeAuto')
+            .addEventListener(
+                'change',
+                function() {
+
+
+                    fetch('/device-control', {
+
+                        method: 'POST',
+
+                        headers: {
+
+                            'Content-Type': 'application/json',
+
+                            'X-CSRF-TOKEN': document
+                                .querySelector(
+                                    'meta[name="csrf-token"]'
+                                )
+                                .content
+                        },
+
+
+                        body: JSON.stringify({
+
+                            type: 'mode',
+
+                            value: 'auto'
+
+                        })
+
+                    });
+
+                });
+
+
+        document
+            .getElementById('modeManual')
+            .addEventListener(
+                'change',
+                function() {
+
+
+                    fetch('/device-control', {
+
+                        method: 'POST',
+
+                        headers: {
+
+                            'Content-Type': 'application/json',
+
+                            'X-CSRF-TOKEN': document
+                                .querySelector(
+                                    'meta[name="csrf-token"]'
+                                )
+                                .content
+                        },
+
+
+                        body: JSON.stringify({
+
+                            type: 'mode',
+
+                            value: 'manual'
+
+                        })
+
+                    });
+
+                });
+
+
     </script>
 @endpush
