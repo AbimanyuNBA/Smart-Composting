@@ -46,6 +46,13 @@ Route::post(
     [SimulationController::class,'deviceControl']
 );
 
+Route::get(
+    '/control-device',
+    [SimulationController::class,'controlDevice']
+);
+
+
+
 
 
 
@@ -87,4 +94,18 @@ Route::get(
 Route::get(
     '/batch/cancel',
     [BatchController::class,'cancel']
+);
+
+// ==========================
+// DATA LOG
+// ==========================
+
+Route::get(
+    '/data-log',
+    [SimulationController::class,'dataLog']
+);
+
+Route::get(
+    '/history',
+    [SimulationController::class,'history']
 );

@@ -27,7 +27,6 @@ class SimulationController extends Controller
 
         return
             $system['active_batch'] ?? null;
-
     }
 
 
@@ -97,7 +96,6 @@ class SimulationController extends Controller
                     "batches/$activeBatch/history"
                 )
                 ->getValue();
-
         }
 
 
@@ -126,29 +124,28 @@ class SimulationController extends Controller
 
 
         return response()
-        ->json([
+            ->json([
 
 
-            'system' =>
+                'system' =>
                 $system,
 
 
-            // command manual
-            'control' =>
+                // command manual
+                'control' =>
                 $control,
 
 
-            // status alat asli
-            'currentData' =>
+                // status alat asli
+                'currentData' =>
                 $currentData,
 
 
-            // tabel
-            'history' =>
+                // tabel
+                'history' =>
                 $tableHistory
 
-        ]);
-
+            ]);
     }
 
 
@@ -220,7 +217,6 @@ class SimulationController extends Controller
                     "batches/$activeBatch/history"
                 )
                 ->getValue();
-
         }
 
 
@@ -234,7 +230,7 @@ class SimulationController extends Controller
 
         $history =
             array_reverse(
-                array_slice($history,-10)
+                array_slice($history, -10)
             );
 
 
@@ -255,7 +251,7 @@ class SimulationController extends Controller
 
 
 
-        foreach($history as $item){
+        foreach ($history as $item) {
 
 
             $labels[] =
@@ -290,7 +286,6 @@ class SimulationController extends Controller
 
             $kematanganData[] =
                 $item['kematangan_pct'] ?? 0;
-
         }
 
 
@@ -324,7 +319,6 @@ class SimulationController extends Controller
 
             )
         );
-
     }
 
 
@@ -357,7 +351,7 @@ class SimulationController extends Controller
 
 
 
-        if($activeBatch){
+        if ($activeBatch) {
 
 
             $history =
@@ -366,7 +360,6 @@ class SimulationController extends Controller
                     "batches/$activeBatch/history"
                 )
                 ->getValue();
-
         }
 
 
@@ -390,52 +383,51 @@ class SimulationController extends Controller
 
 
         return response()
-        ->json([
+            ->json([
 
 
-            'labels' =>
+                'labels' =>
                 array_column(
                     $history,
                     'hari'
                 ),
 
 
-            'suhuData' =>
+                'suhuData' =>
                 array_column(
                     $history,
                     'suhu'
                 ),
 
 
-            'kelembapanData' =>
+                'kelembapanData' =>
                 array_column(
                     $history,
                     'kelembapan'
                 ),
 
 
-            'phData' =>
+                'phData' =>
                 array_column(
                     $history,
                     'ph'
                 ),
 
 
-            'co2Data' =>
+                'co2Data' =>
                 array_column(
                     $history,
                     'co2'
                 ),
 
 
-            'kematanganData' =>
+                'kematanganData' =>
                 array_column(
                     $history,
                     'kematangan_pct'
                 )
 
-        ]);
-
+            ]);
     }
 
 
@@ -459,34 +451,32 @@ class SimulationController extends Controller
 
 
 
-        if($request->type == 'kipas'){
+        if ($request->type == 'kipas') {
 
 
             $database
-            ->getReference(
-                'control/kipas_manual'
-            )
-            ->set(
-                (int)$request->value
-            );
-
+                ->getReference(
+                    'control/kipas_manual'
+                )
+                ->set(
+                    (int)$request->value
+                );
         }
 
 
 
 
 
-        if($request->type == 'pengaduk'){
+        if ($request->type == 'pengaduk') {
 
 
             $database
-            ->getReference(
-                'control/pengaduk_manual'
-            )
-            ->set(
-                (int)$request->value
-            );
-
+                ->getReference(
+                    'control/pengaduk_manual'
+                )
+                ->set(
+                    (int)$request->value
+                );
         }
 
 
@@ -494,17 +484,16 @@ class SimulationController extends Controller
 
 
 
-        if($request->type == 'mode'){
+        if ($request->type == 'mode') {
 
 
             $database
-            ->getReference(
-                'control/mode'
-            )
-            ->set(
-                $request->value
-            );
-
+                ->getReference(
+                    'control/mode'
+                )
+                ->set(
+                    $request->value
+                );
         }
 
 
@@ -512,12 +501,415 @@ class SimulationController extends Controller
 
 
         return response()
-        ->json([
+            ->json([
 
-            'success'=>true
+                'success' => true
 
-        ]);
-
+            ]);
     }
 
+    // ===============================
+    // DATA LOG PAGE
+    // ===============================
+    public function dataLog()
+    {
+
+        $database =
+            $this->database();
+
+
+        $activeBatch =
+            $this->getActiveBatch();
+
+
+        $history = [];
+
+
+        if ($activeBatch) {
+
+
+            $history =
+                $database
+                ->getReference(
+                    "batches/$activeBatch/history"
+                )
+                ->getValue();
+        }
+
+
+        $history =
+            array_reverse(
+                array_values(
+                    $history ?? []
+                )
+            );
+
+
+        // manual pagination firebase array
+
+        $page =
+            request()
+            ->get(
+                'page',
+                1
+            );
+
+
+        $perPage = 10;
+
+
+        $items =
+            array_slice(
+                $history,
+                ($page - 1) * $perPage,
+                $perPage
+            );
+
+
+        $logs =
+            new \Illuminate\Pagination\LengthAwarePaginator(
+
+                $items,
+
+                count($history),
+
+                $perPage,
+
+                $page,
+
+                [
+                    'path' => request()->url()
+                ]
+
+            );
+
+
+
+        return view(
+            'data-log',
+            compact(
+                'logs',
+                'activeBatch'
+            )
+        );
+    }
+
+    // ===================================
+    // DATA HISTORIS BATCH
+    // ===================================
+    public function history()
+    {
+
+        $database =
+            $this->database();
+
+
+
+        // ===============================
+        // AMBIL SEMUA BATCH
+        // ===============================
+
+        $batches =
+            $database
+            ->getReference('batches')
+            ->getValue();
+
+
+
+        $selectedBatch =
+            request('batch');
+
+
+
+        // default batch terakhir
+
+        if (!$selectedBatch && $batches) {
+
+
+            $keys =
+                array_keys($batches);
+
+
+            $selectedBatch =
+                end($keys);
+        }
+
+
+
+
+
+        // ===============================
+        // AMBIL HISTORY BATCH
+        // ===============================
+
+        $history = [];
+
+
+
+        if ($selectedBatch) {
+
+
+            $history =
+                $database
+                ->getReference(
+                    "batches/$selectedBatch/history"
+                )
+                ->getValue();
+        }
+
+
+
+
+        $history =
+            array_values(
+                $history ?? []
+            );
+
+
+
+
+        // ===============================
+        // DATA UNTUK GRAFIK
+        // ===============================
+
+
+        $labels = [];
+
+        $suhu = [];
+
+        $kelembapan = [];
+
+        $co2 = [];
+
+        $ph = [];
+
+        $kematangan = [];
+
+
+
+
+        foreach ($history as $row) {
+
+
+
+            $labels[] =
+                "Hari " .
+                ($row['hari'] ?? 0);
+
+
+
+
+            $suhu[] =
+                $row['suhu'] ?? 0;
+
+
+
+
+            $kelembapan[] =
+                $row['kelembapan'] ?? 0;
+
+
+
+
+            $co2[] =
+                $row['co2'] ?? 0;
+
+
+
+
+            $ph[] =
+                $row['ph'] ?? 0;
+
+
+
+
+            $kematangan[] =
+                $row['kematangan_pct'] ?? 0;
+        }
+
+
+
+
+
+        // ===============================
+        // PAGINATION REKAP TABEL
+        // ===============================
+
+
+        $page =
+            request()
+            ->get(
+                'page',
+                1
+            );
+
+
+
+        $perPage = 10;
+
+
+
+        // terbaru tampil atas
+
+        $tableHistory =
+            array_reverse($history);
+
+
+
+
+        $items =
+            array_slice(
+
+                $tableHistory,
+
+
+                ($page - 1)
+                    *
+                    $perPage,
+
+
+                $perPage
+
+            );
+
+
+
+
+
+        $logs =
+            new \Illuminate\Pagination\LengthAwarePaginator(
+
+
+                $items,
+
+
+                count($tableHistory),
+
+
+                $perPage,
+
+
+                $page,
+
+
+                [
+
+                    'path' =>
+                    request()->url(),
+
+
+                    'query' =>
+                    request()->query()
+
+                ]
+
+            );
+
+
+
+
+
+
+
+        return view(
+
+            'history',
+
+            compact(
+
+
+                'batches',
+
+
+                'selectedBatch',
+
+
+                'labels',
+
+
+                'suhu',
+
+
+                'kelembapan',
+
+
+                'co2',
+
+
+                'ph',
+
+
+                'kematangan',
+
+
+                'logs'
+
+
+            )
+
+        );
+    }
+
+
+    // ===================================
+    // HALAMAN CONTROL DEVICE
+    // ===================================
+    public function controlDevice()
+    {
+
+        $database =
+            $this->database();
+
+
+        $system =
+            $database
+            ->getReference('system')
+            ->getValue();
+
+
+        $control =
+            $database
+            ->getReference('control')
+            ->getValue();
+
+
+        $activeBatch =
+            $this->getActiveBatch();
+
+
+
+        $currentData = [];
+
+
+        if ($activeBatch) {
+
+
+            $currentData =
+                $database
+                ->getReference(
+                    "batches/$activeBatch/current_data"
+                )
+                ->getValue();
+        }
+
+
+
+        return view(
+
+            'control-device',
+
+            compact(
+
+                'system',
+
+                'control',
+
+                'activeBatch',
+
+                'currentData'
+
+            )
+
+        );
+    }
 }
