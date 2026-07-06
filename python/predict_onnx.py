@@ -1,11 +1,30 @@
 import os
 
+# =====================
+# Limit resource hosting
+# HARUS sebelum import numpy/onnx
+# =====================
+
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["ORT_LOG_SEVERITY_LEVEL"] = "4"
+os.environ["ORT_DISABLE_ALL_WARNINGS"] = "1"
+
 import sys
 import json
 import numpy as np
 import onnxruntime as rt
 
+
+# =====================
+# Validasi Parameter
+# =====================
+
+if len(sys.argv) < 8:
+    print(json.dumps({
+        "error": "Parameter tidak lengkap"
+    }))
+    sys.exit()
 
 
 # =====================
@@ -20,11 +39,10 @@ co2 = float(sys.argv[5])
 pengaduk = float(sys.argv[6])
 kipas = float(sys.argv[7])
 
-# =====================
-# Load ONNX
-# =====================
 
-import os
+# =====================
+# Lokasi model ONNX
+# =====================
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
@@ -35,16 +53,32 @@ MODEL_PATH = os.path.join(
     "model_kematangan_rf.onnx"
 )
 
+
+# =====================
+# Setting ONNX Runtime
+# =====================
+
+options = rt.SessionOptions()
+
+options.intra_op_num_threads = 1
+options.inter_op_num_threads = 1
+
+
 session = rt.InferenceSession(
-    MODEL_PATH
+    MODEL_PATH,
+    sess_options=options,
+    providers=[
+        "CPUExecutionProvider"
+    ]
 )
 
+
 # =====================
-# Bentuk Input
+# Bentuk Input AI
 # =====================
 
-data_baru = np.array([
-    [
+data_baru = np.array(
+    [[
         hari,
         suhu,
         kelembapan,
@@ -52,8 +86,10 @@ data_baru = np.array([
         co2,
         pengaduk,
         kipas
-    ]
-], dtype=np.float32)
+    ]],
+    dtype=np.float32
+)
+
 
 # =====================
 # Prediksi
@@ -63,17 +99,18 @@ input_name = session.get_inputs()[0].name
 
 hasil = session.run(
     None,
-    {input_name: data_baru}
+    {
+        input_name: data_baru
+    }
 )
 
-
-os.environ["ORT_DISABLE_ALL_WARNINGS"] = "1"
 
 kematangan = float(hasil[0][0][0])
 sisa_hari = float(hasil[0][0][1])
 
+
 # =====================
-# Output JSON
+# Return JSON Laravel
 # =====================
 
 output = {
