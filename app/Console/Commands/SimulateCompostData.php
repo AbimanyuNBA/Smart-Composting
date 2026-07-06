@@ -54,9 +54,11 @@ class SimulateCompostData extends Command
 
             // $file =
             //     'C:/Users/Abimanyu/Dekstop/dataset_fermentasi_kompos-fix.csv';
-
-                $file = 'C:/Users/Abimanyu/Desktop/dataset_fermentasi_kompos-fix.csv';
-
+               
+            // $file = 'C:/Users/Abimanyu/Dekstop/dataset_fermentasi_kompos-fix.csv';
+                // $file = 'D:/POLMAN/PENELITIAN/DATASET/dataset_fermentasi_kompos-fix.csv';
+            $file = storage_path( 'dataset/dataset_fermentasi_kompos-fix.csv');
+           
             $rows =
                 array_map('str_getcsv', file($file));
 

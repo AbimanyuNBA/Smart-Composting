@@ -367,7 +367,7 @@
 
                         <div class="border rounded-4 p-3 bg-white shadow-sm">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0 fw-bold">EM4 Pump (Pengaduk)</h6>
+                                <h6 class="mb-0 fw-bold">Pengaduk</h6>
                                 <div class="d-flex align-items-center gap-2">
                                     <span id="pengadukValue" class="badge bg-light text-dark border small">OFF</span>
                                     <div class="form-check form-switch m-0">
