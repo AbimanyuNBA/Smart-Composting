@@ -78,25 +78,43 @@
                     </span>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-start mb-1">
-                    <span class="batch-name">{{ $activeBatch ?? 'Tidak Ada Batch Aktif' }}</span>
-                    <span class="text-muted small text-end">Last Sync:<br><span id="timestampValue"
-                            class="fw-semibold text-dark">{{ $currentData['timestamp'] ?? '-' }}</span></span>
-                </div>
+                {{-- FASE CHIP: warna & ikon ditentukan dari nilai fase yang dikirim Firebase --}}
+                @php
+                    $faseName = $currentData['fase'] ?? '-';
+                    $faseKey = strtolower($faseName);
+                    if (str_contains($faseKey, 'termo')) {
+                        $faseIcon = 'bi-fire';
+                        $faseClass = 'fase-hot';
+                        $faseDesc = 'Suhu tinggi, aktivitas mikroba memuncak';
+                    } elseif (str_contains($faseKey, 'dingin') || str_contains($faseKey, 'cooling')) {
+                        $faseIcon = 'bi-snow2';
+                        $faseClass = 'fase-cool';
+                        $faseDesc = 'Suhu menurun, dekomposisi melambat';
+                    } elseif (str_contains($faseKey, 'matang') || str_contains($faseKey, 'matur')) {
+                        $faseIcon = 'bi-patch-check-fill';
+                        $faseClass = 'fase-mature';
+                        $faseDesc = 'Kompos siap digunakan';
+                    } else {
+                        $faseIcon = 'bi-thermometer-low';
+                        $faseClass = 'fase-meso';
+                        $faseDesc = 'Dekomposisi awal, suhu naik bertahap';
+                    }
+                @endphp
 
-                <div class="mb-3 d-flex justify-content-between text-muted small">
-                    <div>Fase Saat Ini: <span class="text-primary fw-bold"
-                            id="faseValue">{{ $currentData['fase'] ?? '-' }}</span></div>
-                    <div class="fw-bold text-dark">Hari ke-<span id="hariValue">{{ $currentData['hari'] ?? 0 }}</span></div>
-                </div>
-
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-semibold text-muted small">AI Prediction Progress</span>
-                        <span id="kematanganValue" class="text-success fw-bold">{{ $currentData['kematangan_pct'] ?? 0 }}
-                            %</span>
+                <div class="fase-chip {{ $faseClass }} mb-3" id="faseChip">
+                    <div class="fase-chip-icon"><i class="bi {{ $faseIcon }}" id="faseIcon"></i></div>
+                    <div>
+                        <div class="fase-chip-title">Fase <span id="faseValue">{{ $faseName }}</span></div>
+                        <div class="fase-chip-desc" id="faseDesc">{{ $faseDesc }}</div>
                     </div>
-                    <div class="progress progress-custom">
+                </div>
+
+               
+
+                <div class="ai-hero mb-3">
+                    <div class="ai-hero-label"><i class="bi bi-cpu-fill"></i> Prediksi Kematangan AI</div>
+                    <div class="ai-hero-value"><span id="kematanganValue">{{ $currentData['kematangan_pct'] ?? 0 }}</span><small>% matang</small></div>
+                    <div class="progress progress-custom mb-2">
                         <div class="progress-bar" id="kematanganBar"
                             style="width: {{ $currentData['kematangan_pct'] ?? 0 }}%"></div>
                     </div>
@@ -353,6 +371,38 @@
         });
 
         // ===============================
+        // FASE CHIP: update warna/ikon saat data realtime berubah
+        // ===============================
+        function updateFaseChip(faseText) {
+            const faseKey = (faseText || '').toLowerCase();
+            const faseChip = document.getElementById('faseChip');
+            const faseIcon = document.getElementById('faseIcon');
+            const faseDesc = document.getElementById('faseDesc');
+
+            let faseClass = 'fase-meso';
+            let faseIconClass = 'bi-thermometer-low';
+            let faseDescText = 'Dekomposisi awal, suhu naik bertahap';
+
+            if (faseKey.includes('termo')) {
+                faseClass = 'fase-hot';
+                faseIconClass = 'bi-fire';
+                faseDescText = 'Suhu tinggi, aktivitas mikroba memuncak';
+            } else if (faseKey.includes('dingin') || faseKey.includes('cooling')) {
+                faseClass = 'fase-cool';
+                faseIconClass = 'bi-snow2';
+                faseDescText = 'Suhu menurun, dekomposisi melambat';
+            } else if (faseKey.includes('matang') || faseKey.includes('matur')) {
+                faseClass = 'fase-mature';
+                faseIconClass = 'bi-patch-check-fill';
+                faseDescText = 'Kompos siap digunakan';
+            }
+
+            faseChip.className = 'fase-chip ' + faseClass + ' mb-3';
+            faseIcon.className = 'bi ' + faseIconClass;
+            faseDesc.innerHTML = faseDescText;
+        }
+
+        // ===============================
         // REALTIME DASHBOARD + TABLE
         // ===============================
         async function refreshDashboard() {
@@ -369,16 +419,43 @@
                 kelembapanValue.innerHTML = current.kelembapan + '<small> %</small>';
                 co2Value.innerHTML = current.co2 + '<small> ppm</small>';
                 phValue.innerHTML = current.ph;
-                timestampValue.innerHTML = current.timestamp;
-                document.getElementById('topbarSync').innerHTML = current.timestamp;
-                faseValue.innerHTML = current.fase;
-                hariValue.innerHTML = current.hari;
-                document.getElementById('topbarHari').innerHTML = 'Hari ke-' + current.hari;
+                // timestamp
+if(document.getElementById('timestampValue')){
+
+    timestampValue.innerHTML =
+        current.timestamp;
+
+}
+
+
+document.getElementById('topbarSync').innerHTML =
+    current.timestamp;
+
+
+// fase
+faseValue.innerHTML =
+    current.fase;
+
+
+// hari
+if(document.getElementById('hariValue')){
+
+    hariValue.innerHTML =
+        current.hari;
+
+}
+
+
+document.getElementById('topbarHari').innerHTML =
+    'Hari ke-' + current.hari;
                 currentRowValue.innerHTML = system.current_row;
+
+                // FASE (nilai berasal dari Firebase)
+                updateFaseChip(current.fase);
 
                 // AI
                 let kematangan = current.kematangan_pct ?? 0;
-                kematanganValue.innerHTML = kematangan + ' %';
+                kematanganValue.innerHTML = kematangan;
                 kematanganBar.style.width = kematangan + '%';
                 sisaHariValue.innerHTML = current.sisa_hari;
 

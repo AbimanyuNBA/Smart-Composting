@@ -316,6 +316,104 @@ body {
     color: var(--ink);
 }
 
+/* FASE CHIP */
+
+.fase-chip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 16px;
+}
+
+.fase-chip-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+    flex-shrink: 0;
+}
+
+.fase-chip-title {
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+}
+
+.fase-chip-desc {
+    font-size: 12.5px;
+    font-weight: 600;
+    opacity: .85;
+}
+
+.fase-chip.fase-meso { background: var(--blue-soft); }
+.fase-chip.fase-meso .fase-chip-icon { background: rgba(59, 130, 246, .18); color: #1d4ed8; }
+.fase-chip.fase-meso .fase-chip-title,
+.fase-chip.fase-meso .fase-chip-desc { color: #1d4ed8; }
+
+.fase-chip.fase-hot { background: var(--red-soft); }
+.fase-chip.fase-hot .fase-chip-icon { background: rgba(239, 68, 68, .18); color: #b91c1c; }
+.fase-chip.fase-hot .fase-chip-title,
+.fase-chip.fase-hot .fase-chip-desc { color: #b91c1c; }
+
+.fase-chip.fase-cool { background: #e0f2fe; }
+.fase-chip.fase-cool .fase-chip-icon { background: rgba(14, 165, 233, .18); color: #0369a1; }
+.fase-chip.fase-cool .fase-chip-title,
+.fase-chip.fase-cool .fase-chip-desc { color: #0369a1; }
+
+.fase-chip.fase-mature { background: var(--brand-soft); }
+.fase-chip.fase-mature .fase-chip-icon { background: rgba(16, 185, 129, .2); color: var(--brand-dark); }
+.fase-chip.fase-mature .fase-chip-title,
+.fase-chip.fase-mature .fase-chip-desc { color: var(--brand-dark); }
+
+/* AI HERO */
+
+.ai-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 18px;
+    padding: 18px 20px;
+    color: white;
+}
+
+.ai-hero-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #a7f3d0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.ai-hero-value {
+    font-size: 40px;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+    margin-bottom: 14px;
+}
+
+.ai-hero-value small {
+    font-size: 15px;
+    font-weight: 700;
+    color: #cbd5e1;
+    margin-left: 6px;
+}
+
+.ai-hero .progress-custom {
+    background: rgba(255, 255, 255, .12);
+}
+
+.ai-hero .progress-custom .progress-bar {
+    background: linear-gradient(90deg, #34d399, #10b981);
+}
+
 .status-dropdown-badge {
     font-size: 12.5px;
     font-weight: 700;
