@@ -1,89 +1,119 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="row g-3 mb-3">
-
-        <div class="col-xl-5 col-lg-6">
-            <div class="row g-3">
-                <div class="col-6">
-                    <div class="card-modern">
-                        <div class="metric-title"><i class="bi bi-thermometer-half"></i> Suhu (°C)</div>
-                        <div class="metric-value" id="suhuValue">{{ $currentData['suhu'] ?? 0 }}<small>°C</small></div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card-modern">
-                        <div class="metric-title"><i class="bi bi-droplet"></i> Kelembapan (%)</div>
-                        <div class="metric-value" id="kelembapanValue">{{ $currentData['kelembapan'] ?? 0 }}<small>%</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card-modern">
-                        <div class="metric-title"><i class="bi bi-cloud-haze2"></i> CO₂ (ppm)</div>
-                        <div class="metric-value" id="co2Value">{{ $currentData['co2'] ?? 0 }}<small>ppm</small></div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card-modern">
-                        <div class="metric-title"><i class="bi bi-virus"></i> pH</div>
-                        <div class="metric-value" id="phValue">{{ $currentData['ph'] ?? 0.0 }}</div>
-                    </div>
+    {{-- ===================== METRIC CARDS ===================== --}}
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon icon-red"><i class="bi bi-thermometer-half"></i></div>
+                <div>
+                    <div class="metric-label">Suhu (°C)</div>
+                    <div class="metric-value" id="suhuValue">{{ $currentData['suhu'] ?? 0 }}<small> °C</small></div>
+                    <span class="badge-normal"><i class="bi bi-check-circle-fill"></i> Normal</span>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-7 col-lg-6">
-            <div class="card-modern d-flex flex-column justify-content-between">
+        <div class="col-xl-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon icon-blue"><i class="bi bi-droplet-fill"></i></div>
                 <div>
+                    <div class="metric-label">Kelembapan (%)</div>
+                    <div class="metric-value" id="kelembapanValue">{{ $currentData['kelembapan'] ?? 0 }}<small> %</small>
+                    </div>
+                    <span class="badge-normal"><i class="bi bi-check-circle-fill"></i> Normal</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon icon-green"><i class="bi bi-cloud-haze2-fill"></i></div>
+                <div>
+                    <div class="metric-label">CO₂ (ppm)</div>
+                    <div class="metric-value" id="co2Value">{{ $currentData['co2'] ?? 0 }}<small> ppm</small></div>
+                    <span class="badge-normal"><i class="bi bi-check-circle-fill"></i> Normal</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon icon-purple"><i class="bi bi-droplet-half"></i></div>
+                <div>
+                    <div class="metric-label">pH</div>
+                    <div class="metric-value" id="phValue">{{ $currentData['ph'] ?? 0.0 }}</div>
+                    <span class="badge-normal"><i class="bi bi-check-circle-fill"></i> Normal</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===================== CHART + AI PREDICTION ===================== --}}
+    <div class="row g-4 mb-4">
+
+        <div class="col-xl-8 col-lg-7">
+            <div class="card-modern">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-muted"></i> Progress Lintasan Parameter : Suhu
+                        &amp; CO₂</h6>
+                    <div class="d-flex gap-3 text-muted small fw-semibold">
+                        <span class="text-danger">● Temp (°C)</span>
+                        <span class="text-primary">● CO₂ (ppm)</span>
+                    </div>
+                </div>
+                <div style="height: 320px;">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card-modern d-flex flex-column">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-cpu text-muted"></i> AI Prediction (Kematangan)</h6>
+                    <span id="batchStatusBadge" class="status-dropdown-badge">
+                        Status: {{ ucfirst($batchInfo['status'] ?? 'None') }} <i class="bi bi-chevron-down ms-1"></i>
+                    </span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <span class="batch-name">{{ $activeBatch ?? 'Tidak Ada Batch Aktif' }}</span>
+                    <span class="text-muted small text-end">Last Sync:<br><span id="timestampValue"
+                            class="fw-semibold text-dark">{{ $currentData['timestamp'] ?? '-' }}</span></span>
+                </div>
+
+                <div class="mb-3 d-flex justify-content-between text-muted small">
+                    <div>Fase Saat Ini: <span class="text-primary fw-bold"
+                            id="faseValue">{{ $currentData['fase'] ?? '-' }}</span></div>
+                    <div class="fw-bold text-dark">Hari ke-<span id="hariValue">{{ $currentData['hari'] ?? 0 }}</span></div>
+                </div>
+
+                <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h4 class="mb-0 fw-bold">{{ $activeBatch ?? 'Tidak Ada Batch Aktif' }} - Status Overview</h4>
-
-                        <span id="batchStatusBadge"
-                            class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-sm">
-                            Status: {{ ucfirst($batchInfo['status'] ?? 'None') }} <i class="bi bi-chevron-down ms-1"></i>
-                        </span>
+                        <span class="fw-semibold text-muted small">AI Prediction Progress</span>
+                        <span id="kematanganValue" class="text-success fw-bold">{{ $currentData['kematangan_pct'] ?? 0 }}
+                            %</span>
                     </div>
-
-                    <div class="mb-2 d-flex justify-content-between text-muted small">
-                        <div>Fase Saat Ini: <span class="text-primary fw-bold"
-                                id="faseValue">[{{ $currentData['fase'] ?? '-' }}]</span></div>
-                        <div>Last Sync: <span id="timestampValue"
-                                class="fw-semibold">{{ $currentData['timestamp'] ?? '-' }}</span></div>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-semibold text-muted small">AI Prediction Progress (Kematangan): <span
-                                    id="kematanganValue"
-                                    class="text-success fw-bold">{{ $currentData['kematangan_pct'] ?? 0 }} %</span></span>
-                            <span class="fw-bold text-dark small">Hari ke-<span
-                                    id="hariValue">{{ $currentData['hari'] ?? 0 }}</span></span>
-                        </div>
-                        <div class="progress progress-custom">
-                            <div class="progress-bar" id="kematanganBar"
-                                style="width: {{ $currentData['kematangan_pct'] ?? 0 }}%"></div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-4 mb-3 align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success"></span>
-                            <span id="predictionStatus"
-                                class="badge bg-success small">{{ $currentData['prediction_status'] ?? 'completed' }}</span>
-                        </div>
-                        <div class="fw-semibold text-muted small">
-                            Estimasi Selesai: <span id="sisaHariValue"
-                                class="text-primary fw-bold">{{ $currentData['sisa_hari'] ?? 0 }}</span> Hari Lagi
-                        </div>
+                    <div class="progress progress-custom">
+                        <div class="progress-bar" id="kematanganBar"
+                            style="width: {{ $currentData['kematangan_pct'] ?? 0 }}%"></div>
                     </div>
                 </div>
 
-                <div class="border-top pt-3 d-flex gap-2 flex-wrap">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span id="predictionStatus"
+                        class="badge-soft-success">{{ $currentData['prediction_status'] ?? 'completed' }}</span>
+                    <span class="small text-muted">Estimasi: <b class="text-primary"
+                            id="sisaHariValue">{{ $currentData['sisa_hari'] ?? 0 }}</b> hari lagi</span>
+                </div>
+
+                <div class="mt-auto d-flex gap-2 flex-wrap">
                     @if (($batchInfo['status'] ?? '') == 'draft')
                         <a href="/batch/start" class="btn btn-success btn-action"
                             onclick="return confirm('Mulai batch ini?')">
-                            <i class="bi bi-play-fill"></i> Start Batch
+                            <i class="bi bi-play-fill"></i> Start
                         </a>
                     @elseif (($batchInfo['status'] ?? '') == 'active')
                         <a href="/batch/pause" class="btn btn-warning btn-action text-white"
@@ -112,15 +142,12 @@
                             <i class="bi bi-x-circle"></i> Cancel
                         </a>
                     @elseif (in_array($batchInfo['status'] ?? '', ['completed', 'cancelled']))
-                        <a href="/batch/create" class="btn btn-primary btn-action">
-                            <i class="bi bi-box-seam-fill"></i> 📦 Buat Batch Baru
+                        <a href="/batch/create" class="btn btn-primary btn-action w-100">
+                            <i class="bi bi-box-seam-fill"></i> Buat Batch Baru
                         </a>
-                        <span class="badge d-inline-flex align-items-center bg-light text-dark border px-3 rounded-3">
-                            Batch Selesai / Dibatalkan
-                        </span>
                     @else
-                        <a href="/batch/create" class="btn btn-primary btn-action">
-                            <i class="bi bi-box-seam-fill"></i> 📦 Buat Batch Baru
+                        <a href="/batch/create" class="btn btn-primary btn-action w-100">
+                            <i class="bi bi-box-seam-fill"></i> Buat Batch Baru
                         </a>
                     @endif
                 </div>
@@ -129,239 +156,20 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-3">
+    {{-- ===================== TABLE + DEVICE CONTROL ===================== --}}
+    <div class="row g-4">
 
         <div class="col-xl-8 col-lg-7">
             <div class="card-modern">
-                <div class="d-flex justify-content-between mb-3">
-                    <h5 class="fw-bold mb-0"><i class="bi bi-graph-up text-muted"></i> Progress Lintasan Parameter : Suhu &
-                        CO₂</h5>
-                    <div class="d-flex gap-3 text-muted small fw-semibold">
-                        <span class="text-danger">● Temp (°C)</span>
-                        <span class="text-primary">● CO₂ (ppm)</span>
-                    </div>
-                </div>
-                <div style="height: 300px;">
-                    <canvas id="mainChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-lg-5">
-
-            <div class="card-modern">
-
-                <h5 class="fw-bold mb-3">
-                    <i class="bi bi-cpu"></i>
-                    Device Control
-                </h5>
-
-
-                <!-- MODE -->
-                <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
-
-                    <div class="fw-bold mb-2">
-                        Mode Operasi
-                    </div>
-
-
-                    <div class="d-flex gap-4">
-
-                        <div class="form-check">
-
-                            <input class="form-check-input" type="radio" name="mode" id="modeAuto" checked>
-
-                            <label class="form-check-label">
-                                AUTO
-                            </label>
-
-                        </div>
-
-
-
-                        <div class="form-check">
-
-                            <input class="form-check-input" type="radio" name="mode" id="modeManual">
-
-                            <label class="form-check-label">
-                                MANUAL
-                            </label>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-
-
-
-                <!-- BLOWER -->
-                <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
-
-
-                    <div class="d-flex justify-content-between">
-
-
-                        <h6 class="fw-bold">
-                            🌬 Aerasi (Blower)
-                        </h6>
-
-
-                        <!-- STATUS SENSOR -->
-
-                        <span id="kipasValue" class="badge bg-success">
-
-                            ON
-
-                        </span>
-
-
-                    </div>
-
-
-
-                    <small class="text-muted">
-
-                        Status aktual perangkat
-
-                    </small>
-
-
-
-                    <hr>
-
-
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-
-                        <span>
-                            Manual Command
-                        </span>
-
-
-                        <div class="form-check form-switch">
-
-                            <input class="form-check-input" type="checkbox" id="blowerToggle">
-
-                        </div>
-
-
-                    </div>
-
-
-                </div>
-
-
-
-
-
-
-                <!-- PENGADUK -->
-
-                <div class="border rounded-4 p-3 bg-white shadow-sm">
-
-
-                    <div class="d-flex justify-content-between">
-
-
-                        <h6 class="fw-bold">
-                            🔄 Pengaduk
-                        </h6>
-
-
-                        <span id="pengadukValue" class="badge bg-secondary">
-
-                            OFF
-
-                        </span>
-
-
-                    </div>
-
-
-
-                    <small class="text-muted">
-
-                        Status aktual perangkat
-
-                    </small>
-
-
-
-                    <hr>
-
-
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-
-                        <span>
-                            Manual Command
-                        </span>
-
-
-
-                        <div class="form-check form-switch">
-
-
-                            <input class="form-check-input" type="checkbox" id="pengadukToggle">
-
-
-                        </div>
-
-
-                    </div>
-
-
-                </div>
-
-
-
-
-
-
-                <div class="border-top mt-3 pt-2 small text-muted d-flex justify-content-between">
-
-
-                    <div>
-                        Row Aktif:
-                        <b id="currentRowValue">
-                            {{ $system['current_row'] ?? 0 }}
-                        </b>
-                    </div>
-
-
-                    <div>
-                        Interval:
-                        <b>
-                            {{ $system['simulation_interval'] ?? 0 }} Detik
-                        </b>
-                    </div>
-
-
-                </div>
-
-
-            </div>
-
-        </div>
-    </div>
-
-    <div class="row g-3">
-        <div class="col-12">
-            <div class="card-modern">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0"><i class="bi bi-layout-text-window-reverse text-muted"></i> Parameter Data
-                        Tabel Log</h5>
-                    <button class="btn btn-light border rounded-pill px-4 shadow-sm btn-sm">Filtered by <i
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-layout-text-window-reverse text-muted"></i> Parameter Data
+                        Tabel Log</h6>
+                    <button class="btn btn-light border filter-pill px-4">Filtered by <i
                             class="bi bi-chevron-down ms-1"></i></button>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-custom">
+                    <table class="table table-custom mb-0">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -392,13 +200,72 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted">Belum ada data riwayat kompos untuk
-                                        batch ini.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Belum ada data riwayat kompos
+                                        untuk batch ini.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card-modern">
+
+                <h6 class="fw-bold mb-3"><i class="bi bi-sliders text-muted"></i> Device Control</h6>
+
+                <div class="device-box mb-3">
+                    <div class="device-title mb-2">Mode Operasi</div>
+                    <div class="mode-toggle-group">
+                        <div class="form-check">
+                            <input class="form-check-input visually-hidden" type="radio" name="mode" id="modeAuto"
+                                checked>
+                            <label class="form-check-label" for="modeAuto">AUTO</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input visually-hidden" type="radio" name="mode"
+                                id="modeManual">
+                            <label class="form-check-label" for="modeManual">MANUAL</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="device-box">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="device-title">🌬 Aerasi (Blower)</div>
+                        <span id="kipasValue" class="badge bg-success">ON</span>
+                    </div>
+                    <div class="device-sub">Status aktual perangkat</div>
+                    <hr>
+                    <div id="blowerManualBox" class="d-flex justify-content-between align-items-center">
+                        <span class="small fw-semibold">Manual Command</span>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="blowerToggle">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="device-box">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="device-title">🔄 Pengaduk</div>
+                        <span id="pengadukValue" class="badge bg-secondary">OFF</span>
+                    </div>
+                    <div class="device-sub">Status aktual perangkat</div>
+                    <hr>
+                    <div id="pengadukManualBox" class="d-flex justify-content-between align-items-center">
+                        <span class="small fw-semibold">Manual Command</span>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="pengadukToggle">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-top mt-3 pt-3 device-footer">
+                    <div>Row Aktif: <b id="currentRowValue">{{ $system['current_row'] ?? 0 }}</b></div>
+                    <div>Interval: <b>{{ $system['simulation_interval'] ?? 0 }} Detik</b></div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -409,11 +276,11 @@
         // Setup Chart.js
         const ctx = document.getElementById('mainChart').getContext('2d');
 
-        let gradientSuhu = ctx.createLinearGradient(0, 0, 0, 300);
+        let gradientSuhu = ctx.createLinearGradient(0, 0, 0, 320);
         gradientSuhu.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
         gradientSuhu.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
 
-        let gradientCO2 = ctx.createLinearGradient(0, 0, 0, 300);
+        let gradientCO2 = ctx.createLinearGradient(0, 0, 0, 320);
         gradientCO2.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
         gradientCO2.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
 
@@ -428,6 +295,7 @@
                         backgroundColor: gradientSuhu,
                         tension: 0.4,
                         fill: true,
+                        pointRadius: 3,
                         yAxisID: 'y'
                     },
                     {
@@ -437,6 +305,7 @@
                         backgroundColor: gradientCO2,
                         tension: 0.4,
                         fill: true,
+                        pointRadius: 3,
                         yAxisID: 'y1'
                     }
                 ]
@@ -483,476 +352,252 @@
             }
         });
 
-       // ===============================
-// REALTIME DASHBOARD + TABLE
-// ===============================
+        // ===============================
+        // REALTIME DASHBOARD + TABLE
+        // ===============================
+        async function refreshDashboard() {
+            try {
+                const response = await fetch('/dashboard-data?t=' + Date.now());
+                const data = await response.json();
 
-async function refreshDashboard() {
+                const current = data.currentData || {};
+                const system = data.system || {};
+                const control = data.control || {};
 
-    try {
+                // SENSOR CARD
+                suhuValue.innerHTML = current.suhu + '<small> °C</small>';
+                kelembapanValue.innerHTML = current.kelembapan + '<small> %</small>';
+                co2Value.innerHTML = current.co2 + '<small> ppm</small>';
+                phValue.innerHTML = current.ph;
+                timestampValue.innerHTML = current.timestamp;
+                document.getElementById('topbarSync').innerHTML = current.timestamp;
+                faseValue.innerHTML = current.fase;
+                hariValue.innerHTML = current.hari;
+                document.getElementById('topbarHari').innerHTML = 'Hari ke-' + current.hari;
+                currentRowValue.innerHTML = system.current_row;
 
-        const response =
-            await fetch('/dashboard-data?t=' + Date.now());
+                // AI
+                let kematangan = current.kematangan_pct ?? 0;
+                kematanganValue.innerHTML = kematangan + ' %';
+                kematanganBar.style.width = kematangan + '%';
+                sisaHariValue.innerHTML = current.sisa_hari;
 
+                // ===============================
+                // STATUS DEVICE SESUAI MODE
+                // ===============================
 
-        const data =
-            await response.json();
+                let kipasStatus = 0;
+                let pengadukStatus = 0;
 
 
-        const current =
-            data.currentData || {};
+                // MODE AUTO
+                if (control.mode === 'auto') {
 
+                    kipasStatus =
+                        current.kipas ?? 0;
 
-        const system =
-            data.system || {};
+                    pengadukStatus =
+                        current.pengaduk ?? 0;
 
+                }
 
-        const control =
-            data.control || {};
 
+                // MODE MANUAL
+                else {
 
+                    kipasStatus =
+                        control.kipas_manual ?? 0;
 
-        // =====================
-        // SENSOR CARD
-        // =====================
+                    pengadukStatus =
+                        control.pengaduk_manual ?? 0;
 
-        suhuValue.innerHTML =
-            current.suhu + '<small>°C</small>';
+                }
 
 
-        kelembapanValue.innerHTML =
-            current.kelembapan + '<small>%</small>';
+                // tampil status kipas
+                kipasValue.innerHTML =
+                    kipasStatus == 1 ? 'ON' : 'OFF';
 
 
-        co2Value.innerHTML =
-            current.co2 + '<small>ppm</small>';
+                kipasValue.className =
+                    kipasStatus == 1 ?
+                    'badge bg-success' :
+                    'badge bg-secondary';
 
 
-        phValue.innerHTML =
-            current.ph;
+                // tampil status pengaduk
+                pengadukValue.innerHTML =
+                    pengadukStatus == 1 ? 'ON' : 'OFF';
 
 
-        timestampValue.innerHTML =
-            current.timestamp;
+                pengadukValue.className =
+                    pengadukStatus == 1 ?
+                    'badge bg-success' :
+                    'badge bg-secondary';
 
+                // MANUAL COMMAND
+                // ===============================
+                // MODE CONTROL
+                // ===============================
 
-        faseValue.innerHTML =
-            current.fase;
+                modeAuto.checked =
+                    control.mode == 'auto';
 
 
-        hariValue.innerHTML =
-            current.hari;
+                modeManual.checked =
+                    control.mode == 'manual';
 
 
-        currentRowValue.innerHTML =
-            system.current_row;
+                // isi posisi switch manual
 
+                blowerToggle.checked =
+                    control.kipas_manual == 1;
 
 
-        // =====================
-        // AI
-        // =====================
+                pengadukToggle.checked =
+                    control.pengaduk_manual == 1;
 
-        let kematangan =
-            current.kematangan_pct ?? 0;
 
 
-        kematanganValue.innerHTML =
-            kematangan + ' %';
+                // ===============================
+                // HIDE MANUAL COMMAND SAAT AUTO
+                // ===============================
 
+                if (control.mode === 'auto') {
 
-        kematanganBar.style.width =
-            kematangan + '%';
 
+                    blowerManualBox.style.display =
+                        'none';
 
-        sisaHariValue.innerHTML =
-            current.sisa_hari;
 
+                    pengadukManualBox.style.display =
+                        'none';
 
 
-        // =====================
-        // STATUS AKTUAL DEVICE
-        // dari current_data
-        // =====================
+                    // matikan akses switch
+                    blowerToggle.disabled = true;
 
+                    pengadukToggle.disabled = true;
 
-        kipasValue.innerHTML =
-            current.kipas == 1
-            ? 'ON'
-            : 'OFF';
 
+                } else {
 
-        kipasValue.className =
-            current.kipas == 1
-            ?
-            'badge bg-success'
-            :
-            'badge bg-secondary';
 
+                    blowerManualBox.style.display =
+                        'flex';
 
 
-        pengadukValue.innerHTML =
-            current.pengaduk == 1
-            ? 'ON'
-            : 'OFF';
+                    pengadukManualBox.style.display =
+                        'flex';
 
 
-        pengadukValue.className =
-            current.pengaduk == 1
-            ?
-            'badge bg-success'
-            :
-            'badge bg-secondary';
+                    blowerToggle.disabled = false;
 
+                    pengadukToggle.disabled = false;
 
+                }
 
-        // =====================
-        // MANUAL COMMAND
-        // dari Firebase control
-        // =====================
 
 
-        blowerToggle.checked =
-            control.kipas_manual == 1;
+                // TABLE LOG
+                let html = "";
+                (data.history || []).forEach(function(item, index) {
+                    html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>Hari ${item.hari}</td>
+                        <td>${item.timestamp}</td>
+                        <td>${item.suhu}°C</td>
+                        <td>${item.kelembapan}%</td>
+                        <td>${item.co2} ppm</td>
+                        <td>${item.ph}</td>
+                        <td><span class="badge bg-light text-dark border">${item.fase}</span></td>
+                    </tr>`;
+                });
+                tableBody.innerHTML = html;
 
-
-        pengadukToggle.checked =
-            control.pengaduk_manual == 1;
-
-
-        modeAuto.checked =
-            control.mode == 'auto';
-
-
-        modeManual.checked =
-            control.mode == 'manual';
-
-
-
-
-        // =====================
-        // TABLE LOG
-        // =====================
-
-
-        let html = "";
-
-
-        (data.history || []).forEach(
-
-            function(item,index){
-
-
-            html += `
-
-            <tr>
-
-                <td>${index+1}</td>
-
-                <td>
-                    Hari ${item.hari}
-                </td>
-
-                <td>
-                    ${item.timestamp}
-                </td>
-
-                <td>
-                    ${item.suhu}°C
-                </td>
-
-                <td>
-                    ${item.kelembapan}%
-                </td>
-
-                <td>
-                    ${item.co2} ppm
-                </td>
-
-                <td>
-                    ${item.ph}
-                </td>
-
-                <td>
-
-                <span class="badge bg-light text-dark border">
-
-                    ${item.fase}
-
-                </span>
-
-                </td>
-
-
-            </tr>
-
-            `;
-
-        });
-
-
-
-        tableBody.innerHTML =
-            html;
-
-
-
-    } catch(error){
-
-        console.log(
-            "Realtime Error",
-            error
-        );
-
-    }
-
-}
-
-
-
-
+            } catch (error) {
+                console.log("Realtime Error", error);
+            }
+        }
 
         // ===============================
         // REALTIME CHART
         // ===============================
-
         async function refreshCharts() {
-
             try {
+                const response = await fetch('/chart-data?t=' + Date.now());
+                const data = await response.json();
 
-
-                const response =
-                    await fetch(
-                        '/chart-data?t=' + Date.now()
-                    );
-
-
-                const data =
-                    await response.json();
-
-
-
-                mainChart.data.labels =
-                    data.labels;
-
-
-
-                mainChart
-                    .data
-                    .datasets[0]
-                    .data =
-                    data.suhuData;
-
-
-
-                mainChart
-                    .data
-                    .datasets[1]
-                    .data =
-                    data.co2Data;
-
-
-
+                mainChart.data.labels = data.labels;
+                mainChart.data.datasets[0].data = data.suhuData;
+                mainChart.data.datasets[1].data = data.co2Data;
                 mainChart.update();
-
-
             } catch (error) {
-
-                console.log(
-                    "Chart Error",
-                    error
-                );
-
+                console.log("Chart Error", error);
             }
-
         }
 
-
-
-
-
-
-        // ===============================
-        // INTERVAL
-        // ===============================
-
-        setInterval(
-            refreshDashboard,
-            2000
-        );
-
-
-        setInterval(
-            refreshCharts,
-            5000
-        );
-
-
+        setInterval(refreshDashboard, 2000);
+        setInterval(refreshCharts, 5000);
 
         refreshDashboard();
-
         refreshCharts();
 
-
-
-
-        document
-            .getElementById('blowerToggle')
-            .addEventListener(
-                'change',
-                function() {
-
-
-                    fetch('/device-control', {
-
-                        method: 'POST',
-
-                        headers: {
-
-                            'Content-Type': 'application/json',
-
-                            'X-CSRF-TOKEN': document
-                                .querySelector(
-                                    'meta[name="csrf-token"]'
-                                )
-                                .content
-
-                        },
-
-
-                        body: JSON.stringify({
-
-                            type: 'kipas',
-
-                            value: this.checked ? 1 : 0
-
-                        })
-
-
-                    });
-
-
-                });
-
-
-
-        document
-            .getElementById('pengadukToggle')
-            .addEventListener(
-                'change',
-                function() {
-
-
-                    fetch('/device-control', {
-
-                        method: 'POST',
-
-
-                        headers: {
-
-
-                            'Content-Type': 'application/json',
-
-
-                            'X-CSRF-TOKEN': document
-                                .querySelector(
-                                    'meta[name="csrf-token"]'
-                                )
-                                .content
-
-                        },
-
-
-
-                        body: JSON.stringify({
-
-
-                            type: 'pengaduk',
-
-
-                            value: this.checked ? 1 : 0
-
-
-                        })
-
-
-                    });
-
-
-                });
-
-
-        document
-            .getElementById('modeAuto')
-            .addEventListener(
-                'change',
-                function() {
-
-
-                    fetch('/device-control', {
-
-                        method: 'POST',
-
-                        headers: {
-
-                            'Content-Type': 'application/json',
-
-                            'X-CSRF-TOKEN': document
-                                .querySelector(
-                                    'meta[name="csrf-token"]'
-                                )
-                                .content
-                        },
-
-
-                        body: JSON.stringify({
-
-                            type: 'mode',
-
-                            value: 'auto'
-
-                        })
-
-                    });
-
-                });
-
-
-        document
-            .getElementById('modeManual')
-            .addEventListener(
-                'change',
-                function() {
-
-
-                    fetch('/device-control', {
-
-                        method: 'POST',
-
-                        headers: {
-
-                            'Content-Type': 'application/json',
-
-                            'X-CSRF-TOKEN': document
-                                .querySelector(
-                                    'meta[name="csrf-token"]'
-                                )
-                                .content
-                        },
-
-
-                        body: JSON.stringify({
-
-                            type: 'mode',
-
-                            value: 'manual'
-
-                        })
-
-                    });
-
-                });
-
-
+        document.getElementById('blowerToggle').addEventListener('change', function() {
+            fetch('/device-control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    type: 'kipas',
+                    value: this.checked ? 1 : 0
+                })
+            });
+        });
+
+        document.getElementById('pengadukToggle').addEventListener('change', function() {
+            fetch('/device-control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    type: 'pengaduk',
+                    value: this.checked ? 1 : 0
+                })
+            });
+        });
+
+        document.getElementById('modeAuto').addEventListener('change', function() {
+            fetch('/device-control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    type: 'mode',
+                    value: 'auto'
+                })
+            });
+        });
+
+        document.getElementById('modeManual').addEventListener('change', function() {
+            fetch('/device-control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    type: 'mode',
+                    value: 'manual'
+                })
+            });
+        });
     </script>
 @endpush
