@@ -1,111 +1,199 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
 
+
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\SimulationController;
 
 
-// ==========================
-// DASHBOARD
-// ==========================
+
+// ======================================================
+// AUTH
+// ======================================================
+
 
 Route::get(
-    '/',
-    [SimulationController::class,'index']
+    '/login',
+    [AuthController::class,'login']
 )
-->name('dashboard');
+->name('login');
 
 
-
-
-// ==========================
-// REALTIME DATA
-// ==========================
-
-Route::get(
-    '/dashboard-data',
-    [SimulationController::class,'dashboardData']
-);
-
-
-Route::get(
-    '/chart-data',
-    [SimulationController::class,'chartData']
-);
-
-
-
-
-// ==========================
-// DEVICE CONTROL
-// ==========================
 
 Route::post(
-    '/device-control',
-    [SimulationController::class,'deviceControl']
-);
-
-Route::get(
-    '/control-device',
-    [SimulationController::class,'controlDevice']
+    '/login',
+    [AuthController::class,'prosesLogin']
 );
 
 
 
-
-
-
-// ==========================
-// BATCH CONTROL
-// ==========================
-
-
-Route::get(
-    '/batch/create',
-    [BatchController::class,'create']
+Route::post(
+    '/logout',
+    [AuthController::class,'logout']
 );
 
 
-Route::get(
-    '/batch/start',
-    [BatchController::class,'start']
-);
 
 
-Route::get(
-    '/batch/pause',
-    [BatchController::class,'pause']
-);
 
 
-Route::get(
-    '/batch/resume',
-    [BatchController::class,'resume']
-);
+// ======================================================
+// PROTECTED ADMIN AREA
+// ======================================================
 
 
-Route::get(
-    '/batch/complete',
-    [BatchController::class,'complete']
-);
+Route::middleware('auth')->group(function(){
 
 
-Route::get(
-    '/batch/cancel',
-    [BatchController::class,'cancel']
-);
 
-// ==========================
-// DATA LOG
-// ==========================
+    // ==========================
+    // DASHBOARD
+    // ==========================
 
-Route::get(
-    '/data-log',
-    [SimulationController::class,'dataLog']
-);
 
-Route::get(
-    '/history',
-    [SimulationController::class,'history']
-);
+    Route::get(
+        '/',
+        [SimulationController::class,'index']
+    )
+    ->name('dashboard');
+
+
+
+
+
+
+
+    // ==========================
+    // REALTIME DATA
+    // ==========================
+
+
+    Route::get(
+        '/dashboard-data',
+        [SimulationController::class,'dashboardData']
+    );
+
+
+
+    Route::get(
+        '/chart-data',
+        [SimulationController::class,'chartData']
+    );
+
+
+
+
+
+
+
+
+    // ==========================
+    // DEVICE CONTROL
+    // ==========================
+
+
+    Route::get(
+        '/control-device',
+        [SimulationController::class,'controlDevice']
+    );
+
+
+
+    Route::post(
+        '/device-control',
+        [SimulationController::class,'deviceControl']
+    );
+
+
+
+
+
+
+
+
+    // ==========================
+    // BATCH CONTROL
+    // ==========================
+
+
+    Route::get(
+        '/batch/create',
+        [BatchController::class,'create']
+    );
+
+
+
+    Route::get(
+        '/batch/start',
+        [BatchController::class,'start']
+    );
+
+
+
+    Route::get(
+        '/batch/pause',
+        [BatchController::class,'pause']
+    );
+
+
+
+    Route::get(
+        '/batch/resume',
+        [BatchController::class,'resume']
+    );
+
+
+
+    Route::get(
+        '/batch/complete',
+        [BatchController::class,'complete']
+    );
+
+
+
+    Route::get(
+        '/batch/cancel',
+        [BatchController::class,'cancel']
+    );
+
+
+
+
+
+
+
+
+
+    // ==========================
+    // DATA LOG SENSOR
+    // ==========================
+
+
+    Route::get(
+        '/data-log',
+        [SimulationController::class,'dataLog']
+    );
+
+
+
+
+
+
+
+
+    // ==========================
+    // HISTORY BATCH
+    // ==========================
+
+
+    Route::get(
+        '/history',
+        [SimulationController::class,'history']
+    );
+
+
+
+});

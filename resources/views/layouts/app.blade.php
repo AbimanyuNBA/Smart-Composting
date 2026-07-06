@@ -50,10 +50,19 @@
             Control Device
         </a>
 
-        <a href="#" class="menu-link logout">
-            <i class="bi bi-box-arrow-right"></i>
-            Logout
-        </a>
+        <form action="/logout" method="POST" class="mt-auto">
+
+            @csrf
+
+            <button class="menu-link logout border-0 bg-white w-100">
+
+                <i class="bi bi-box-arrow-right"></i>
+
+                Logout
+
+            </button>
+
+        </form>
 
     </div>
 
@@ -65,12 +74,15 @@
                 <span class="status-dot-inline bg-success"></span>
                 <span class="topbar-batch-label">Batch Aktif : <b>{{ $activeBatch ?? '-' }}</b></span>
                 @php $statusKey = strtolower($batchInfo['status'] ?? 'none'); @endphp
-                <span class="status-pill {{ $statusKey }}">Status : {{ ucfirst($batchInfo['status'] ?? 'None') }}</span>
+                <span class="status-pill {{ $statusKey }}">Status :
+                    {{ ucfirst($batchInfo['status'] ?? 'None') }}</span>
             </div>
 
             <div class="d-flex align-items-center gap-4">
-                <div class="topbar-meta"><i class="bi bi-clock-history"></i> Last Sync : <b id="topbarSync">{{ $currentData['timestamp'] ?? '-' }}</b></div>
-                <div class="topbar-meta"><i class="bi bi-calendar3"></i> <b id="topbarHari">Hari ke-{{ $currentData['hari'] ?? 0 }}</b></div>
+                <div class="topbar-meta"><i class="bi bi-clock-history"></i> Last Sync : <b
+                        id="topbarSync">{{ $currentData['timestamp'] ?? '-' }}</b></div>
+                <div class="topbar-meta"><i class="bi bi-calendar3"></i> <b id="topbarHari">Hari
+                        ke-{{ $currentData['hari'] ?? 0 }}</b></div>
                 <div class="d-flex align-items-center gap-2 user-box">
                     <div class="avatar-circle"><i class="bi bi-mortarboard-fill"></i></div>
                     <span class="fw-bold">{{ auth()->user()->name ?? 'School' }}</span>
