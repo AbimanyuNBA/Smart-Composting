@@ -9,17 +9,12 @@ use Kreait\Laravel\Firebase\Facades\Firebase;
 
 
 
-Route::get('/', function () {
-    return view('welcome');
-});
+
+
+
 
 Route::get(
-    '/simulation-control',
-    [SimulationController::class, 'index']
-);
-
-Route::get(
-    '/dashboard',
+    '/',
     [SimulationController::class, 'index']
 );
 
