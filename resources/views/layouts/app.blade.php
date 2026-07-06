@@ -17,7 +17,9 @@
 
 <body>
 
-    <div class="sidebar">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar" id="sidebar">
 
         <div class="logo-box">
             <div class="logo-icon">🌱</div>
@@ -25,6 +27,7 @@
                 <div class="title">Smart Composting</div>
                 <div class="subtitle">IoT &amp; AI System</div>
             </div>
+            <i class="bi bi-x-lg sidebar-close" id="sidebarClose"></i>
         </div>
 
         <a href="/" class="menu-link {{ request()->is('/') ? 'active' : '' }}">
@@ -58,7 +61,7 @@
 
         <div class="topbar d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                <i class="bi bi-list topbar-toggle"></i>
+                <i class="bi bi-list topbar-toggle" id="sidebarToggle"></i>
                 <span class="status-dot-inline bg-success"></span>
                 <span class="topbar-batch-label">Batch Aktif : <b>{{ $activeBatch ?? '-' }}</b></span>
                 @php $statusKey = strtolower($batchInfo['status'] ?? 'none'); @endphp
@@ -78,6 +81,34 @@
 
         @yield('content')
     </div>
+
+    <script>
+        (function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const openBtn = document.getElementById('sidebarToggle');
+            const closeBtn = document.getElementById('sidebarClose');
+
+            function openSidebar() {
+                sidebar.classList.add('show');
+                overlay.classList.add('show');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+
+            openBtn && openBtn.addEventListener('click', openSidebar);
+            closeBtn && closeBtn.addEventListener('click', closeSidebar);
+            overlay && overlay.addEventListener('click', closeSidebar);
+
+            // close sidebar automatically after tapping a menu link (mobile)
+            document.querySelectorAll('.sidebar .menu-link').forEach(function(link) {
+                link.addEventListener('click', closeSidebar);
+            });
+        })();
+    </script>
 
     @stack('scripts')
 
