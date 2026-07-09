@@ -184,7 +184,7 @@ kematangan = float(
 
 
 sisa = float(
-    hasil[1][0][0]
+    hasil[0][0][1]
 )
 
 
