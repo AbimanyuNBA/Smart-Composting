@@ -1,3 +1,10 @@
+import os
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
