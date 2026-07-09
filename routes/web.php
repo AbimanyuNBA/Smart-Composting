@@ -194,6 +194,9 @@ Route::middleware('auth')->group(function(){
         [SimulationController::class,'history']
     );
 
+   
+
+
 
 
 });

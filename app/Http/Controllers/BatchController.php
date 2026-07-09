@@ -7,97 +7,199 @@ use Illuminate\Http\Request;
 class BatchController extends Controller
 {
     public function create()
-    {
-        $database = app('firebase.database');
+{
+    $database = app('firebase.database');
 
-        $system = $database
-            ->getReference('system')
+
+    // ==========================
+    // CEK BATCH AKTIF
+    // ==========================
+
+    $system =
+        $database
+        ->getReference('system')
+        ->getValue();
+
+
+    $activeBatch =
+        $system['active_batch'] ?? null;
+
+
+
+    if ($activeBatch) {
+
+
+        $currentBatch =
+            $database
+            ->getReference(
+                "batches/$activeBatch"
+            )
             ->getValue();
 
-        $activeBatch =
-            $system['active_batch'] ?? null;
 
-        if ($activeBatch) {
+        $status =
+            $currentBatch['status'] ?? null;
 
-            $currentBatch = $database
-                ->getReference(
-                    "batches/$activeBatch"
-                )
-                ->getValue();
 
-            $status =
-                $currentBatch['status'] ?? 'draft';
 
-            if (
-                in_array(
-                    $status,
-                    [
-                        'draft',
-                        'active',
-                        'paused'
-                    ]
-                )
-            ) {
+        if (
+            in_array(
+                $status,
+                [
+                    'draft',
+                    'active',
+                    'paused'
+                ]
+            )
+        ) {
 
-                return redirect('/')
-                    ->with(
-                        'error',
-                        "Batch $activeBatch belum selesai"
-                    );
-            }
+            return redirect('/')
+                ->with(
+                    'error',
+                    "Batch $activeBatch belum selesai"
+                );
+
         }
 
-        $batches = $database
-            ->getReference('batches')
-            ->getValue();
-
-        $batchCount =
-            count($batches ?? []);
-
-        $newBatchNumber =
-            $batchCount + 1;
-
-        $batchId =
-            'batch_' .
-            str_pad(
-                $newBatchNumber,
-                3,
-                '0',
-                STR_PAD_LEFT
-            );
-
-        $database
-            ->getReference(
-                "batches/$batchId"
-            )
-            ->set([
-                'status' => 'draft',
-
-                'start_date' => '-',
-                'start_timestamp' => 0,
-
-                'end_date' => '-',
-                'end_timestamp' => 0
-            ]);
-
-        $database
-            ->getReference(
-                'system/active_batch'
-            )
-            ->set($batchId);
-
-        $database
-            ->getReference(
-                'system/current_row'
-            )
-            ->set(1);
-
-        return redirect('/')
-            ->with(
-                'success',
-                "Batch baru berhasil dibuat: $batchId"
-            );
     }
+
+
+
+
+
+    // ==========================
+    // CARI NOMOR BATCH TERAKHIR
+    // ==========================
+
+
+    $batches =
+        $database
+        ->getReference('batches')
+        ->getValue();
+
+
+
+    $lastNumber = 0;
+
+
+
+    if ($batches) {
+
+
+        foreach ($batches as $key => $value) {
+
+
+            $number =
+                (int)
+                str_replace(
+                    'batch_',
+                    '',
+                    $key
+                );
+
+
+            if ($number > $lastNumber) {
+
+                $lastNumber = $number;
+
+            }
+
+        }
+
+    }
+
+
+
+
+    $batchId =
+        'batch_' .
+        str_pad(
+            $lastNumber + 1,
+            3,
+            '0',
+            STR_PAD_LEFT
+        );
+
+
+
+
+
+    // ==========================
+    // CREATE BATCH BARU
+    // ==========================
+
+
+    $database
+        ->getReference(
+            "batches/$batchId"
+        )
+        ->set([
+
+
+            'status' =>
+                'draft',
+
+
+            'start_date' =>
+                '-',
+
+
+            'start_timestamp' =>
+                0,
+
+
+            'end_date' =>
+                '-',
+
+
+            'end_timestamp' =>
+                0,
+
+
+            // kosongkan tempat sensor baru
+            'current_data' =>
+                null,
+
+
+            'history' =>
+                null
+
+        ]);
+
+
+
+
+
+    // ==========================
+    // UPDATE SYSTEM
+    // ==========================
+
+
+    $database
+        ->getReference(
+            'system/active_batch'
+        )
+        ->set(
+            $batchId
+        );
+
+
+
+    $database
+        ->getReference(
+            'system/current_row'
+        )
+        ->set(1);
+
+
+
+
+    return redirect('/')
+        ->with(
+            'success',
+            "Batch baru berhasil dibuat: $batchId"
+        );
+}
 
     public function start()
     {

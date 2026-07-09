@@ -912,4 +912,184 @@ class SimulationController extends Controller
 
         );
     }
+
+
+
+    public function receiveSensor($sensor)
+    {
+
+        $database = $this->database();
+
+
+        $activeBatch =
+            $this->getActiveBatch();
+
+
+        if (!$activeBatch) {
+
+            return false;
+        }
+
+
+        // =========================
+        // DATA SENSOR
+        // =========================
+
+
+        $data = [
+
+            'timestamp' =>
+            $sensor['timestamp'] ?? now()->format('Y-m-d H:i:s'),
+
+
+            'hari' =>
+            (int)$sensor['hari'],
+
+
+            'fase' =>
+            $sensor['fase'] ?? '-',
+
+
+            'suhu' =>
+            (float)$sensor['suhu'],
+
+
+            'kelembapan' =>
+            (float)$sensor['kelembapan'],
+
+
+            'ph' =>
+            (float)$sensor['ph'],
+
+
+            'co2' =>
+            (int)$sensor['co2'],
+
+
+            'kipas' =>
+            (int)$sensor['kipas'],
+
+
+            'pengaduk' =>
+            (int)$sensor['pengaduk'],
+
+        ];
+
+
+
+
+        // =========================
+        // ONNX PREDICTION
+        // =========================
+
+
+        $python =
+            env('PYTHON_PATH');
+
+
+        $pythonFile =
+            base_path(
+                'python/predict_onnx.py'
+            );
+
+
+
+        $command =
+            "\"$python\" \"$pythonFile\" "
+            . $data['hari'] . " "
+            . $data['suhu'] . " "
+            . $data['kelembapan'] . " "
+            . $data['ph'] . " "
+            . $data['co2'] . " "
+            . $data['pengaduk'] . " "
+            . $data['kipas']
+            . " 2>&1";
+
+
+
+        $output =
+            shell_exec($command);
+
+
+
+        $start =
+            strrpos(
+                $output,
+                '{'
+            );
+
+
+
+        if ($start !== false) {
+
+
+            $result =
+                json_decode(
+                    substr(
+                        $output,
+                        $start
+                    ),
+                    true
+                );
+
+
+            $data['kematangan_pct'] =
+                round(
+                    $result['kematangan_pct'],
+                    2
+                );
+
+
+            $data['sisa_hari'] =
+                (int) round(
+                    $result['sisa_hari']
+                );
+
+
+            $data['prediction_status'] =
+                'completed';
+        } else {
+
+
+            $data['kematangan_pct'] = 0;
+
+
+            $data['sisa_hari'] = 0;
+
+
+            $data['prediction_status'] =
+                'failed';
+        }
+
+
+
+
+        // =========================
+        // UPDATE CURRENT
+        // =========================
+
+
+        $database
+            ->getReference(
+                "batches/$activeBatch/current_data"
+            )
+            ->set($data);
+
+
+
+        // =========================
+        // PUSH HISTORY
+        // =========================
+
+
+        $database
+            ->getReference(
+                "batches/$activeBatch/history"
+            )
+            ->push($data);
+
+
+
+        return true;
+    }
 }
