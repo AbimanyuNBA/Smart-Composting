@@ -123,8 +123,17 @@ print(
 # ==========================
 
 
+
+
+options = rt.SessionOptions()
+
+options.intra_op_num_threads = 1
+options.inter_op_num_threads = 1
+
+
 session = rt.InferenceSession(
-    "model_kematangan_rf.onnx"
+    "model_kematangan_rf.onnx",
+    sess_options=options
 )
 
 
