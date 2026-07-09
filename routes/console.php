@@ -3,5 +3,5 @@
 use Illuminate\Support\Facades\Schedule;
 
 
-Schedule::command('compost:process')
-    ->everyFiveMinutes();
+// Schedule::command('compost:process')
+//     ->everyFiveMinutes();
