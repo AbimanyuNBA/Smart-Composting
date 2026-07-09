@@ -6,61 +6,11 @@ use Illuminate\Http\Request;
 
 class BatchController extends Controller
 {
-    public function create()
-{
-    $database = app('firebase.database');
 
 
-    // ==========================
-    // CEK BATCH AKTIF
-    // ==========================
-
-    $system =
-        $database
-        ->getReference('system')
-        ->getValue();
-
-
-    $activeBatch =
-        $system['active_batch'] ?? null;
-
-
-
-    if ($activeBatch) {
-
-
-        $currentBatch =
-            $database
-            ->getReference(
-                "batches/$activeBatch"
-            )
-            ->getValue();
-
-
-        $status =
-            $currentBatch['status'] ?? null;
-
-
-
-        if (
-            in_array(
-                $status,
-                [
-                    'draft',
-                    'active',
-                    'paused'
-                ]
-            )
-        ) {
-
-            return redirect('/')
-                ->with(
-                    'error',
-                    "Batch $activeBatch belum selesai"
-                );
-
-        }
-
+    private function database()
+    {
+        return app('firebase.database');
     }
 
 
@@ -68,337 +18,450 @@ class BatchController extends Controller
 
 
     // ==========================
-    // CARI NOMOR BATCH TERAKHIR
+    // CREATE BATCH
     // ==========================
 
 
-    $batches =
-        $database
-        ->getReference('batches')
-        ->getValue();
+    public function create()
+    {
+
+        $database =
+            $this->database();
 
 
 
-    $lastNumber = 0;
+        // cek active batch
+
+        $activeBatch =
+            $database
+            ->getReference(
+                'system/active_batch'
+            )
+            ->getValue();
 
 
 
-    if ($batches) {
+
+        if ($activeBatch) {
 
 
-        foreach ($batches as $key => $value) {
+            // ambil status saja
+            // jangan ambil history
 
 
-            $number =
-                (int)
-                str_replace(
-                    'batch_',
-                    '',
-                    $key
-                );
+            $status =
+                $database
+                ->getReference(
+                    "batches/$activeBatch/status"
+                )
+                ->getValue();
 
 
-            if ($number > $lastNumber) {
 
-                $lastNumber = $number;
+
+            if (
+                in_array(
+                    $status,
+                    [
+                        'draft',
+                        'active',
+                        'paused'
+                    ]
+                )
+            ) {
+
+
+                return redirect('/')
+                    ->with(
+                        'error',
+                        "Batch $activeBatch belum selesai"
+                    );
 
             }
 
         }
 
+
+
+
+
+
+
+        // ======================
+        // NOMOR BATCH
+        // ======================
+
+
+        $lastNumber =
+            $database
+            ->getReference(
+                'system/last_batch_number'
+            )
+            ->getValue()
+            ?? 0;
+
+
+
+        $newNumber =
+            $lastNumber + 1;
+
+
+
+
+        $batchId =
+            'batch_' .
+            str_pad(
+                $newNumber,
+                3,
+                '0',
+                STR_PAD_LEFT
+            );
+
+
+
+
+
+
+
+
+        // ======================
+        // CREATE DATA
+        // ======================
+
+
+        $database
+            ->getReference(
+                "batches/$batchId"
+            )
+            ->set([
+
+
+                'status' =>
+                    'draft',
+
+
+                'start_date' =>
+                    '-',
+
+
+                'start_timestamp' =>
+                    0,
+
+
+                'end_date' =>
+                    '-',
+
+
+                'end_timestamp' =>
+                    0
+
+
+            ]);
+
+
+
+
+
+
+
+
+
+        // update system
+
+
+        $database
+            ->getReference(
+                'system/active_batch'
+            )
+            ->set(
+                $batchId
+            );
+
+
+
+        $database
+            ->getReference(
+                'system/current_row'
+            )
+            ->set(1);
+
+
+
+
+        $database
+            ->getReference(
+                'system/last_batch_number'
+            )
+            ->set(
+                $newNumber
+            );
+
+
+
+
+
+        return redirect('/');
+
+
     }
 
 
 
 
-    $batchId =
-        'batch_' .
-        str_pad(
-            $lastNumber + 1,
-            3,
-            '0',
-            STR_PAD_LEFT
-        );
 
 
 
 
 
     // ==========================
-    // CREATE BATCH BARU
+    // START
     // ==========================
 
-
-    $database
-        ->getReference(
-            "batches/$batchId"
-        )
-        ->set([
-
-
-            'status' =>
-                'draft',
-
-
-            'start_date' =>
-                '-',
-
-
-            'start_timestamp' =>
-                0,
-
-
-            'end_date' =>
-                '-',
-
-
-            'end_timestamp' =>
-                0,
-
-
-            // kosongkan tempat sensor baru
-            'current_data' =>
-                null,
-
-
-            'history' =>
-                null
-
-        ]);
-
-
-
-
-
-    // ==========================
-    // UPDATE SYSTEM
-    // ==========================
-
-
-    $database
-        ->getReference(
-            'system/active_batch'
-        )
-        ->set(
-            $batchId
-        );
-
-
-
-    $database
-        ->getReference(
-            'system/current_row'
-        )
-        ->set(1);
-
-
-
-
-    return redirect('/')
-        ->with(
-            'success',
-            "Batch baru berhasil dibuat: $batchId"
-        );
-}
 
     public function start()
     {
-        $database = app('firebase.database');
 
-        $system = $database
-            ->getReference('system')
-            ->getValue();
+        $database =
+            $this->database();
+
+
 
         $activeBatch =
-            $system['active_batch'] ?? null;
+            $database
+            ->getReference(
+                'system/active_batch'
+            )
+            ->getValue();
+
+
+
 
         if (!$activeBatch) {
+
 
             return redirect('/')
                 ->with(
                     'error',
                     'Tidak ada batch aktif'
                 );
+
         }
 
-        $database
-            ->getReference(
-                "batches/$activeBatch/status"
-            )
-            ->set('active');
+
+
 
         $database
             ->getReference(
-                "batches/$activeBatch/start_date"
+                "batches/$activeBatch"
             )
-            ->set(now()->toDateTimeString());
+            ->update([
 
-        $database
-            ->getReference(
-                "batches/$activeBatch/start_timestamp"
-            )
-            ->set(now()->timestamp);
 
-        return redirect('/')
-            ->with(
-                'success',
-                "Batch $activeBatch berhasil dimulai"
-            );
+                'status' =>
+                    'active',
+
+
+                'start_date' =>
+                    now()->toDateTimeString(),
+
+
+                'start_timestamp' =>
+                    now()->timestamp
+
+            ]);
+
+
+
+
+
+        return redirect('/');
+
     }
+
+
+
+
+
+
+
+
+    // ==========================
+    // PAUSE
+    // ==========================
+
 
     public function pause()
     {
-        $database = app('firebase.database');
 
-        $system = $database
-            ->getReference('system')
-            ->getValue();
+        return $this->changeStatus(
+            'paused'
+        );
 
-        $activeBatch =
-            $system['active_batch'] ?? null;
-
-        if (!$activeBatch) {
-
-            return redirect('/')
-                ->with(
-                    'error',
-                    'Tidak ada batch aktif'
-                );
-        }
-
-        $database
-            ->getReference(
-                "batches/$activeBatch/status"
-            )
-            ->set('paused');
-
-        return redirect('/')
-            ->with(
-                'success',
-                "Batch $activeBatch berhasil di-pause"
-            );
     }
+
+
+
+
+
+
+
+    // ==========================
+    // RESUME
+    // ==========================
+
 
     public function resume()
     {
-        $database = app('firebase.database');
 
-        $system = $database
-            ->getReference('system')
-            ->getValue();
+        return $this->changeStatus(
+            'active'
+        );
 
-        $activeBatch =
-            $system['active_batch'] ?? null;
-
-        if (!$activeBatch) {
-
-            return redirect('/')
-                ->with(
-                    'error',
-                    'Tidak ada batch aktif'
-                );
-        }
-
-        $database
-            ->getReference(
-                "batches/$activeBatch/status"
-            )
-            ->set('active');
-
-        return redirect('/')
-            ->with(
-                'success',
-                "Batch $activeBatch berhasil di-resume"
-            );
     }
+
+
+
+
+
+
+
+    // ==========================
+    // COMPLETE
+    // ==========================
+
 
     public function complete()
     {
-        $database = app('firebase.database');
 
-        $system = $database
-            ->getReference('system')
-            ->getValue();
+        return $this->finishBatch(
+            'completed'
+        );
 
-        $activeBatch =
-            $system['active_batch'] ?? null;
-
-        if (!$activeBatch) {
-
-            return redirect('/')
-                ->with(
-                    'error',
-                    'Tidak ada batch aktif'
-                );
-        }
-
-        $database
-            ->getReference(
-                "batches/$activeBatch/status"
-            )
-            ->set('completed');
-
-        $database
-            ->getReference(
-                "batches/$activeBatch/end_date"
-            )
-            ->set(now()->toDateTimeString());
-
-        $database
-            ->getReference(
-                "batches/$activeBatch/end_timestamp"
-            )
-            ->set(now()->timestamp);
-
-        return redirect('/')
-            ->with(
-                'success',
-                "Batch $activeBatch berhasil diselesaikan"
-            );
     }
+
+
+
+
+
+
+
+    // ==========================
+    // CANCEL
+    // ==========================
+
 
     public function cancel()
     {
-        $database = app('firebase.database');
 
-        $system = $database
-            ->getReference('system')
-            ->getValue();
+        return $this->finishBatch(
+            'cancelled'
+        );
+
+    }
+
+
+
+
+
+
+
+
+
+    private function changeStatus($status)
+    {
+
+        $database =
+            $this->database();
+
+
 
         $activeBatch =
-            $system['active_batch'] ?? null;
+            $database
+            ->getReference(
+                'system/active_batch'
+            )
+            ->getValue();
 
-        if (!$activeBatch) {
 
-            return redirect('/')
-                ->with(
-                    'error',
-                    'Tidak ada batch aktif'
+
+        if ($activeBatch) {
+
+
+            $database
+                ->getReference(
+                    "batches/$activeBatch/status"
+                )
+                ->set(
+                    $status
                 );
+
         }
 
-        $database
-            ->getReference(
-                "batches/$activeBatch/status"
-            )
-            ->set('cancelled');
 
-        $database
-            ->getReference(
-                "batches/$activeBatch/end_date"
-            )
-            ->set(now()->toDateTimeString());
 
-        $database
-            ->getReference(
-                "batches/$activeBatch/end_timestamp"
-            )
-            ->set(now()->timestamp);
+        return redirect('/');
 
-        return redirect('/')
-            ->with(
-                'success',
-                "Batch $activeBatch berhasil dibatalkan"
-            );
     }
+
+
+
+
+
+
+
+
+
+
+    private function finishBatch($status)
+    {
+
+
+        $database =
+            $this->database();
+
+
+
+        $activeBatch =
+            $database
+            ->getReference(
+                'system/active_batch'
+            )
+            ->getValue();
+
+
+
+
+        if ($activeBatch) {
+
+
+            $database
+                ->getReference(
+                    "batches/$activeBatch"
+                )
+                ->update([
+
+
+                    'status' =>
+                        $status,
+
+
+                    'end_date' =>
+                        now()->toDateTimeString(),
+
+
+                    'end_timestamp' =>
+                        now()->timestamp
+
+                ]);
+
+        }
+
+
+
+        return redirect('/');
+
+
+    }
+
+
 }

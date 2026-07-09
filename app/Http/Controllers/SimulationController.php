@@ -41,6 +41,10 @@ class SimulationController extends Controller
 
     public function dashboardData()
     {
+        // proses AI kalau ada data waiting
+
+        $this->processPrediction();
+
 
         $database =
             $this->database();
@@ -95,6 +99,8 @@ class SimulationController extends Controller
                 ->getReference(
                     "batches/$activeBatch/history"
                 )
+                ->orderByKey()
+                ->limitToLast(10)
                 ->getValue();
         }
 
@@ -166,17 +172,15 @@ class SimulationController extends Controller
             $this->database();
 
 
-
         $system =
             $database
             ->getReference('system')
             ->getValue();
 
 
-
         $activeBatch =
-            $this->getActiveBatch();
-
+            $system['active_batch']
+            ?? null;
 
 
         $batchInfo = [];
@@ -187,20 +191,27 @@ class SimulationController extends Controller
 
 
 
-
         if ($activeBatch) {
 
 
-
-            $batchInfo =
+            // ambil informasi kecil saja
+            $status =
                 $database
                 ->getReference(
-                    "batches/$activeBatch"
+                    "batches/$activeBatch/status"
                 )
                 ->getValue();
 
 
+            $batchInfo = [
 
+                'status' => $status
+
+            ];
+
+
+
+            // realtime sensor
             $currentData =
                 $database
                 ->getReference(
@@ -210,15 +221,16 @@ class SimulationController extends Controller
 
 
 
-
+            // ambil 10 history terakhir saja
             $history =
                 $database
                 ->getReference(
                     "batches/$activeBatch/history"
                 )
+                ->orderByKey()
+                ->limitToLast(10)
                 ->getValue();
         }
-
 
 
 
@@ -226,13 +238,6 @@ class SimulationController extends Controller
             array_values(
                 $history ?? []
             );
-
-
-        $history =
-            array_reverse(
-                array_slice($history, -10)
-            );
-
 
 
         $labels = [];
@@ -258,30 +263,24 @@ class SimulationController extends Controller
                 $item['hari'] ?? '';
 
 
-
             $timestamps[] =
                 $item['timestamp'] ?? '-';
-
 
 
             $suhuData[] =
                 $item['suhu'] ?? 0;
 
 
-
             $kelembapanData[] =
                 $item['kelembapan'] ?? 0;
-
 
 
             $phData[] =
                 $item['ph'] ?? 0;
 
 
-
             $co2Data[] =
                 $item['co2'] ?? 0;
-
 
 
             $kematanganData[] =
@@ -359,6 +358,8 @@ class SimulationController extends Controller
                 ->getReference(
                     "batches/$activeBatch/history"
                 )
+                ->orderByKey()
+                ->limitToLast(10)
                 ->getValue();
         }
 
@@ -915,14 +916,17 @@ class SimulationController extends Controller
 
 
 
-    public function receiveSensor($sensor)
+    public function processPrediction()
     {
 
-        $database = $this->database();
+        $database =
+            $this->database();
+
 
 
         $activeBatch =
             $this->getActiveBatch();
+
 
 
         if (!$activeBatch) {
@@ -931,60 +935,126 @@ class SimulationController extends Controller
         }
 
 
+
+
+
         // =========================
-        // DATA SENSOR
+        // CEK STATUS BATCH
+        // JANGAN AMBIL SEMUA DATA
         // =========================
 
 
-        $data = [
-
-            'timestamp' =>
-            $sensor['timestamp'] ?? now()->format('Y-m-d H:i:s'),
-
-
-            'hari' =>
-            (int)$sensor['hari'],
+        $status =
+            $database
+            ->getReference(
+                "batches/$activeBatch/status"
+            )
+            ->getValue();
 
 
-            'fase' =>
-            $sensor['fase'] ?? '-',
+
+        if ($status !== 'active') {
+
+            return false;
+        }
 
 
-            'suhu' =>
-            (float)$sensor['suhu'],
 
-
-            'kelembapan' =>
-            (float)$sensor['kelembapan'],
-
-
-            'ph' =>
-            (float)$sensor['ph'],
-
-
-            'co2' =>
-            (int)$sensor['co2'],
-
-
-            'kipas' =>
-            (int)$sensor['kipas'],
-
-
-            'pengaduk' =>
-            (int)$sensor['pengaduk'],
-
-        ];
 
 
 
 
         // =========================
-        // ONNX PREDICTION
+        // AMBIL CURRENT DATA SAJA
+        // =========================
+
+
+        $data =
+            $database
+            ->getReference(
+                "batches/$activeBatch/current_data"
+            )
+            ->getValue();
+
+
+
+
+        if (!$data) {
+
+            return false;
+        }
+
+
+
+
+
+
+
+        // =========================
+        // HANYA PROSES DATA BARU
+        // =========================
+
+
+        if (
+            ($data['prediction_status'] ?? '')
+            !== 'waiting'
+        ) {
+
+
+            return true;
+        }
+
+
+
+
+
+
+
+
+        // =========================
+        // DEFAULT SENSOR
+        // =========================
+
+
+        $data['hari'] =
+            (int)
+            ($data['hari'] ?? 1);
+
+
+
+        $data['timestamp'] =
+            $data['timestamp']
+            ??
+            now()->toDateTimeString();
+
+
+
+        $data['pengaduk'] =
+            (int)
+            ($data['pengaduk'] ?? 0);
+
+
+
+        $data['kipas'] =
+            (int)
+            ($data['kipas'] ?? 0);
+
+
+
+
+
+
+
+
+
+        // =========================
+        // RANDOM FOREST ONNX
         // =========================
 
 
         $python =
             env('PYTHON_PATH');
+
 
 
         $pythonFile =
@@ -996,19 +1066,32 @@ class SimulationController extends Controller
 
         $command =
             "\"$python\" \"$pythonFile\" "
+
             . $data['hari'] . " "
-            . $data['suhu'] . " "
-            . $data['kelembapan'] . " "
-            . $data['ph'] . " "
-            . $data['co2'] . " "
+
+            . (float)$data['suhu'] . " "
+
+            . (float)$data['kelembapan'] . " "
+
+            . (float)$data['ph'] . " "
+
+            . (int)$data['co2'] . " "
+
             . $data['pengaduk'] . " "
+
             . $data['kipas']
+
             . " 2>&1";
 
 
 
+
+
         $output =
-            shell_exec($command);
+            shell_exec(
+                $command
+            );
+
 
 
 
@@ -1020,30 +1103,51 @@ class SimulationController extends Controller
 
 
 
+
+
+
+
+        // =========================
+        // HASIL AI
+        // =========================
+
+
         if ($start !== false) {
 
 
             $result =
                 json_decode(
+
                     substr(
                         $output,
                         $start
                     ),
+
                     true
+
                 );
+
 
 
             $data['kematangan_pct'] =
                 round(
+
                     $result['kematangan_pct'],
+
                     2
+
                 );
+
 
 
             $data['sisa_hari'] =
-                (int) round(
+                (int)
+                round(
+
                     $result['sisa_hari']
+
                 );
+
 
 
             $data['prediction_status'] =
@@ -1051,10 +1155,15 @@ class SimulationController extends Controller
         } else {
 
 
-            $data['kematangan_pct'] = 0;
+
+            $data['kematangan_pct'] =
+                0;
 
 
-            $data['sisa_hari'] = 0;
+
+            $data['sisa_hari'] =
+                0;
+
 
 
             $data['prediction_status'] =
@@ -1064,8 +1173,13 @@ class SimulationController extends Controller
 
 
 
+
+
+
+
+
         // =========================
-        // UPDATE CURRENT
+        // UPDATE CURRENT DATA
         // =========================
 
 
@@ -1073,12 +1187,19 @@ class SimulationController extends Controller
             ->getReference(
                 "batches/$activeBatch/current_data"
             )
-            ->set($data);
+            ->set(
+                $data
+            );
+
+
+
+
+
 
 
 
         // =========================
-        // PUSH HISTORY
+        // SIMPAN HISTORY
         // =========================
 
 
@@ -1086,7 +1207,10 @@ class SimulationController extends Controller
             ->getReference(
                 "batches/$activeBatch/history"
             )
-            ->push($data);
+            ->push(
+                $data
+            );
+
 
 
 

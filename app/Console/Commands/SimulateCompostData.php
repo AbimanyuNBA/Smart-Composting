@@ -5,13 +5,13 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Attributes\Description;
-use App\Http\Controllers\SimulationController;
 
 
 #[Signature('compost:simulate')]
 #[Description('Simulator Smart Composting')]
 class SimulateCompostData extends Command
 {
+
     public function handle()
     {
 
@@ -45,7 +45,9 @@ class SimulateCompostData extends Command
                 sleep(1);
 
                 continue;
+
             }
+
 
 
 
@@ -70,7 +72,6 @@ class SimulateCompostData extends Command
 
 
 
-
             if ($status !== 'active') {
 
 
@@ -81,8 +82,8 @@ class SimulateCompostData extends Command
 
                 sleep(1);
 
-
                 continue;
+
             }
 
 
@@ -97,7 +98,8 @@ class SimulateCompostData extends Command
 
 
             $currentRow =
-                $system['current_row'] ?? 1;
+                $system['current_row']
+                ?? 1;
 
 
 
@@ -122,6 +124,7 @@ class SimulateCompostData extends Command
 
 
 
+
             if ($currentRow > $totalRows) {
 
 
@@ -139,7 +142,10 @@ class SimulateCompostData extends Command
 
 
                 break;
+
             }
+
+
 
 
 
@@ -153,10 +159,9 @@ class SimulateCompostData extends Command
 
 
 
-
             // =========================
-            // DATA SENSOR SAJA
-            // (SIMULASI ESP32)
+            // DATA SENSOR MENTAH
+            // SIMULASI ESP32
             // =========================
 
 
@@ -222,6 +227,14 @@ class SimulateCompostData extends Command
                     (int)
                     $dataRow[8],
 
+
+
+                // tanda belum diproses AI
+
+                'prediction_status' =>
+
+                    'waiting'
+
             ];
 
 
@@ -231,16 +244,18 @@ class SimulateCompostData extends Command
 
 
             // =========================
-            // KIRIM KE PROCESSOR AI
+            // KIRIM KE FIREBASE
+            // SAMA SEPERTI ESP32
             // =========================
 
 
-            app(
-                SimulationController::class
-            )
-            ->receiveSensor(
-                $data
-            );
+            $database
+                ->getReference(
+                    "batches/$activeBatch/current_data"
+                )
+                ->set(
+                    $data
+                );
 
 
 
@@ -250,7 +265,7 @@ class SimulateCompostData extends Command
 
 
             // =========================
-            // UPDATE BARIS CSV
+            // UPDATE INDEX CSV
             // =========================
 
 
@@ -269,20 +284,26 @@ class SimulateCompostData extends Command
 
             $this->info(
 
-                "Baris {$currentRow} dikirim | AI processed"
+                "Baris {$currentRow} dikirim ke Firebase (sensor)"
 
             );
+
 
 
 
 
 
             sleep(
+
                 $system['simulation_interval']
                 ?? 5
+
             );
+
 
         }
 
+
     }
+
 }
