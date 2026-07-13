@@ -33,6 +33,17 @@
 
                 </div>
 
+                @if($selectedBatch)
+                <div class="col-md-8 text-md-end mt-3 mt-md-0 pt-md-4">
+                    <a href="/history/download-csv?batch={{ $selectedBatch }}" class="btn btn-success me-2">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Unduh CSV
+                    </a>
+                    <a href="/history/print-pdf?batch={{ $selectedBatch }}" target="_blank" class="btn btn-danger">
+                        <i class="bi bi-printer"></i> Cetak PDF
+                    </a>
+                </div>
+                @endif
+
             </div>
 
         </form>

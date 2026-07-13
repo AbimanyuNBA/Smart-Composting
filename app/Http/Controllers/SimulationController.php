@@ -331,104 +331,54 @@ class SimulationController extends Controller
     // ====================================
 
 
-    public function chartData()
-    {
+public function chartData()
+{
+    $database = $this->database();
+    $activeBatch = $this->getActiveBatch();
 
-
-        $database =
-            $this->database();
-
-
-        $activeBatch =
-            $this->getActiveBatch();
-
-
-
-        $history = [];
-
-
-
-        if ($activeBatch) {
-
-
-            $history =
-                $database
-                ->getReference(
-                    "batches/$activeBatch/history"
-                )
-                ->orderByKey()
-                ->limitToLast(10)
-                ->getValue();
-        }
-
-
-
-
-        $history =
-            array_values(
-                $history ?? []
-            );
-
-
-
-        // grafik harus urutan waktu naik
-
-        $history =
-            array_slice(
-                $history,
-                -10
-            );
-
-
-
-        return response()
-            ->json([
-
-
-                'labels' =>
-                array_column(
-                    $history,
-                    'hari'
-                ),
-
-
-                'suhuData' =>
-                array_column(
-                    $history,
-                    'suhu'
-                ),
-
-
-                'kelembapanData' =>
-                array_column(
-                    $history,
-                    'kelembapan'
-                ),
-
-
-                'phData' =>
-                array_column(
-                    $history,
-                    'ph'
-                ),
-
-
-                'co2Data' =>
-                array_column(
-                    $history,
-                    'co2'
-                ),
-
-
-                'kematanganData' =>
-                array_column(
-                    $history,
-                    'kematangan_pct'
-                )
-
-            ]);
+    $history = [];
+    if ($activeBatch) {
+        $history = $database
+            ->getReference("batches/$activeBatch/history")
+            ->orderByKey()
+            ->getValue(); // ambil semua, bukan limitToLast(10)
     }
 
+    $history = array_values($history ?? []);
+
+    // Kelompokkan per hari, lalu rata-ratakan tiap metrik
+    $grouped = [];
+    foreach ($history as $row) {
+        $hari = $row['hari'] ?? 0;
+        $grouped[$hari]['suhu'][] = $row['suhu'] ?? 0;
+        $grouped[$hari]['kelembapan'][] = $row['kelembapan'] ?? 0;
+        $grouped[$hari]['ph'][] = $row['ph'] ?? 0;
+        $grouped[$hari]['co2'][] = $row['co2'] ?? 0;
+        $grouped[$hari]['kematangan_pct'][] = $row['kematangan_pct'] ?? 0;
+    }
+
+    ksort($grouped);
+
+    $labels = [];
+    $suhuData = [];
+    $kelembapanData = [];
+    $phData = [];
+    $co2Data = [];
+    $kematanganData = [];
+
+    foreach ($grouped as $hari => $metrics) {
+        $labels[] = "Hari $hari";
+        $suhuData[] = round(array_sum($metrics['suhu']) / count($metrics['suhu']), 1);
+        $kelembapanData[] = round(array_sum($metrics['kelembapan']) / count($metrics['kelembapan']), 1);
+        $phData[] = round(array_sum($metrics['ph']) / count($metrics['ph']), 2);
+        $co2Data[] = round(array_sum($metrics['co2']) / count($metrics['co2']), 1);
+        $kematanganData[] = round(array_sum($metrics['kematangan_pct']) / count($metrics['kematangan_pct']), 1);
+    }
+
+    return response()->json(compact(
+        'labels', 'suhuData', 'kelembapanData', 'phData', 'co2Data', 'kematanganData'
+    ));
+}
 
 
 
@@ -604,15 +554,12 @@ class SimulationController extends Controller
 
 
 
-        // ===============================
-        // AMBIL SEMUA BATCH
-        // ===============================
-
-        $batches =
+        $batchKeys =
             $database
             ->getReference('batches')
-            ->getValue();
+            ->getChildKeys();
 
+        $batches = !empty($batchKeys) ? array_combine($batchKeys, $batchKeys) : [];
 
 
         $selectedBatch =
@@ -622,15 +569,11 @@ class SimulationController extends Controller
 
         // default batch terakhir
 
-        if (!$selectedBatch && $batches) {
-
-
-            $keys =
-                array_keys($batches);
+        if (!$selectedBatch && !empty($batchKeys)) {
 
 
             $selectedBatch =
-                end($keys);
+                end($batchKeys);
         }
 
 
@@ -849,6 +792,126 @@ class SimulationController extends Controller
         );
     }
 
+
+public function downloadCsv(Request $request)
+{
+    $batch = $request->get('batch');
+    if (!$batch) return back();
+
+    $history = $this->database()->getReference("batches/$batch/history")->getValue();
+    $history = array_values($history ?? []);
+
+    // Urutkan berdasarkan hari (ascending)
+    usort($history, fn($a, $b) => ($a['hari'] ?? 0) <=> ($b['hari'] ?? 0));
+
+    // Mengubah header menjadi .xls (Excel HTML format) agar mendukung warna dan layout rapi
+    $headers = [
+        "Content-type"        => "application/vnd.ms-excel; charset=UTF-8",
+        "Content-Disposition" => "attachment; filename=history_batch_{$batch}.xls",
+        "Pragma"              => "no-cache",
+        "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+        "Expires"             => "0"
+    ];
+
+    $columns = [
+        'No', 'Hari', 'Timestamp', 'Suhu (°C)', 'Kelembapan (%)', 'pH',
+        'CO2 (ppm)', 'Fase', 'Kipas', 'Pengaduk', 'Kematangan (%)', 'Sisa Hari (hari)'
+    ];
+
+    $callback = function () use ($history, $columns) {
+        $file = fopen('php://output', 'w');
+
+        // Struktur HTML dasar untuk Excel beserta CSS styling warna & border
+        $html = '
+        <html xmlns:x="urn:schemas-microsoft-com:office:excel">
+        <head>
+            <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+            <!--[if gte mso 9]>
+            <xml>
+                <x:ExcelWorkbook>
+                    <x:ExcelWorksheets>
+                        <x:ExcelWorksheet>
+                            <x:Name>History Batch</x:Name>
+                            <x:WorksheetOptions>
+                                <x:Print>
+                                    <x:ValidPrinterInfo/>
+                                </x:Print>
+                            </x:WorksheetOptions>
+                        </x:ExcelWorksheet>
+                    </x:ExcelWorksheets>
+                </x:ExcelWorkbook>
+            </xml>
+            <![endif]-->
+            <style>
+                table { border-collapse: collapse; font-family: Arial, sans-serif; }
+                th { background-color: #4CAF50; color: white; font-weight: bold; border: 1px solid #dddddd; padding: 8px; text-align: center; }
+                td { border: 1px solid #dddddd; padding: 6px; text-align: left; }
+                .center { text-align: center; }
+                .right { text-align: right; }
+                
+                /* Style untuk status warna */
+                .status-on { background-color: #d4edda; color: #155724; font-weight: bold; text-align: center; }
+                .status-off { background-color: #f8d7da; color: #721c24; font-weight: bold; text-align: center; }
+            </style>
+        </head>
+        <body>
+        <table>
+            <thead>
+                <tr>';
+        
+        foreach ($columns as $col) {
+            $html .= '<th>' . htmlspecialchars($col) . '</th>';
+        }
+        
+        $html .= '</tr>
+            </thead>
+            <tbody>';
+
+        foreach ($history as $index => $row) {
+            $kipasStatus = ($row['kipas'] ?? 0) == 1 ? 'ON' : 'OFF';
+            $kipasClass = $kipasStatus == 'ON' ? 'status-on' : 'status-off';
+
+            $pengadukStatus = ($row['pengaduk'] ?? 0) == 1 ? 'ON' : 'OFF';
+            $pengadukClass = $pengadukStatus == 'ON' ? 'status-on' : 'status-off';
+
+            $html .= '<tr>';
+            $html .= '<td class="center">' . ($index + 1) . '</td>';
+            $html .= '<td>Hari ' . htmlspecialchars($row['hari'] ?? 0) . '</td>';
+            $html .= '<td class="center">' . htmlspecialchars($row['timestamp'] ?? '-') . '</td>';
+            $html .= '<td class="right">' . number_format($row['suhu'] ?? 0, 1) . '</td>';
+            $html .= '<td class="right">' . number_format($row['kelembapan'] ?? 0, 1) . '</td>';
+            $html .= '<td class="right">' . number_format($row['ph'] ?? 0, 2) . '</td>';
+            $html .= '<td class="right">' . number_format($row['co2'] ?? 0, 0) . '</td>';
+            $html .= '<td class="center">' . htmlspecialchars($row['fase'] ?? '-') . '</td>';
+            
+            // Kolom dengan status warna dinamis
+            $html .= '<td class="' . $kipasClass . '">' . $kipasStatus . '</td>';
+            $html .= '<td class="' . $pengadukClass . '">' . $pengadukStatus . '</td>';
+            
+            $html .= '<td class="right">' . number_format($row['kematangan_pct'] ?? 0, 1) . ' %</td>';
+            $html .= '<td class="center">' . htmlspecialchars($row['sisa_hari'] ?? 0) . '</td>';
+            $html .= '</tr>';
+        }
+
+        $html .= '</tbody></table></body></html>';
+
+        fwrite($file, $html);
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
+
+    public function printPdf(Request $request)
+    {
+        $batch = $request->get('batch');
+        if (!$batch) return back();
+
+        $history = $this->database()->getReference("batches/$batch/history")->getValue();
+        $history = array_values($history ?? []);
+        
+        return view('pdf-history', compact('history', 'batch'));
+    }
 
     // ===================================
     // HALAMAN CONTROL DEVICE

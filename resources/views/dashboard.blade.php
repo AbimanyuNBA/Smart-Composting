@@ -55,11 +55,26 @@
         <div class="col-xl-8 col-lg-7">
             <div class="card-modern">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-muted"></i> Progress Lintasan Parameter : Suhu
-                        &amp; CO₂</h6>
-                    <div class="d-flex gap-3 text-muted small fw-semibold">
-                        <span class="text-danger">● Temp (°C)</span>
-                        <span class="text-primary">● CO₂ (ppm)</span>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-muted"></i> Progress Lintasan Parameter</h6>
+
+                    {{-- ===== FILTER PARAMETER GRAFIK ===== --}}
+                    <div class="chart-filter-group d-flex flex-wrap gap-1">
+                        <label class="chart-filter-pill filter-suhu">
+                            <input type="checkbox" data-series="suhu" checked>
+                            <span>● Suhu (°C)</span>
+                        </label>
+                        <label class="chart-filter-pill filter-kelembapan">
+                            <input type="checkbox" data-series="kelembapan">
+                            <span>● Kelembapan (%)</span>
+                        </label>
+                        <label class="chart-filter-pill filter-co2">
+                            <input type="checkbox" data-series="co2" checked>
+                            <span>● CO₂ (ppm)</span>
+                        </label>
+                        <label class="chart-filter-pill filter-ph">
+                            <input type="checkbox" data-series="ph">
+                            <span>● pH</span>
+                        </label>
                     </div>
                 </div>
                 <div style="height: 320px;">
@@ -109,7 +124,7 @@
                     </div>
                 </div>
 
-               
+
 
                 <div class="ai-hero mb-3">
                     <div class="ai-hero-label"><i class="bi bi-cpu-fill"></i> Prediksi Kematangan AI</div>
@@ -251,7 +266,7 @@
 
                 <div class="device-box">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div class="device-title">🌬 Aerasi (Blower)</div>
+                        <div class="device-title"><span id="kipasIcon" class="device-anim-icon">🌬</span> Aerasi (Blower)</div>
                         <span id="kipasValue" class="badge bg-success">ON</span>
                     </div>
                     <div class="device-sub">Status aktual perangkat</div>
@@ -266,7 +281,7 @@
 
                 <div class="device-box">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div class="device-title">🔄 Pengaduk</div>
+                        <div class="device-title"><span id="pengadukIcon" class="device-anim-icon">🔄</span> Pengaduk</div>
                         <span id="pengadukValue" class="badge bg-secondary">OFF</span>
                     </div>
                     <div class="device-sub">Status aktual perangkat</div>
@@ -289,24 +304,76 @@
     </div>
 @endsection
 
+@push('styles')
+    <style>
+        /* ===== Filter pill chart ===== */
+        .chart-filter-group { font-size: .78rem; }
+        .chart-filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+            color: #9ca3af;
+            background: #fff;
+            transition: all .15s ease;
+        }
+        .chart-filter-pill input { display: none; }
+        .chart-filter-pill:has(input:checked) {
+            color: #111827;
+            border-color: currentColor;
+            background: #f9fafb;
+        }
+        .filter-suhu:has(input:checked)        { color: #ef4444; }
+        .filter-kelembapan:has(input:checked)  { color: #3b82f6; }
+        .filter-co2:has(input:checked)         { color: #10b981; }
+        .filter-ph:has(input:checked)          { color: #8b5cf6; }
+
+        /* ===== Animasi status device ===== */
+        .device-anim-icon {
+            display: inline-block;
+            transition: transform .2s ease;
+        }
+        .device-anim-icon.is-spinning {
+            animation: device-spin 1.1s linear infinite;
+        }
+        @keyframes device-spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script>
-        // Setup Chart.js
+        // ==========================================================
+        // Setup Chart.js — 4 parameter (Suhu, Kelembapan, CO2, pH)
+        // ==========================================================
         const ctx = document.getElementById('mainChart').getContext('2d');
 
-        let gradientSuhu = ctx.createLinearGradient(0, 0, 0, 320);
-        gradientSuhu.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
-        gradientSuhu.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+        function makeGradient(ctx, colorRgba) {
+            const g = ctx.createLinearGradient(0, 0, 0, 320);
+            g.addColorStop(0, colorRgba(0.3));
+            g.addColorStop(1, colorRgba(0.0));
+            return g;
+        }
 
-        let gradientCO2 = ctx.createLinearGradient(0, 0, 0, 320);
-        gradientCO2.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
-        gradientCO2.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+        const gradientSuhu       = makeGradient(ctx, a => `rgba(239, 68, 68, ${a})`);
+        const gradientKelembapan = makeGradient(ctx, a => `rgba(59, 130, 246, ${a})`);
+        const gradientCO2        = makeGradient(ctx, a => `rgba(16, 185, 129, ${a})`);
+        const gradientPh         = makeGradient(ctx, a => `rgba(139, 92, 246, ${a})`);
 
         const mainChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: @json($labels ?? []),
-                datasets: [{
+                datasets: [
+                    {
+                        key: 'suhu',
                         label: 'Suhu (°C)',
                         data: @json($suhuData ?? []),
                         borderColor: '#ef4444',
@@ -314,65 +381,102 @@
                         tension: 0.4,
                         fill: true,
                         pointRadius: 3,
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        hidden: false
                     },
                     {
+                        key: 'kelembapan',
+                        label: 'Kelembapan (%)',
+                        data: @json($kelembapanData ?? []),
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradientKelembapan,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        yAxisID: 'y2',
+                        hidden: true
+                    },
+                    {
+                        key: 'co2',
                         label: 'CO₂ (ppm)',
                         data: @json($co2Data ?? []),
-                        borderColor: '#3b82f6',
+                        borderColor: '#10b981',
                         backgroundColor: gradientCO2,
                         tension: 0.4,
                         fill: true,
                         pointRadius: 3,
-                        yAxisID: 'y1'
+                        yAxisID: 'y1',
+                        hidden: false
+                    },
+                    {
+                        key: 'ph',
+                        label: 'pH',
+                        data: @json($phData ?? []),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: gradientPh,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        yAxisID: 'y3',
+                        hidden: true
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    },
+                    x: { grid: { display: false } },
                     y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Suhu (°C)'
-                        },
-                        grid: {
-                            borderDash: [5, 5]
-                        }
+                        type: 'linear', position: 'left', display: true,
+                        title: { display: true, text: 'Suhu (°C)' },
+                        grid: { borderDash: [5, 5] }
                     },
                     y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'CO₂ (ppm)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
+                        type: 'linear', position: 'right', display: true,
+                        title: { display: true, text: 'CO₂ (ppm)' },
+                        grid: { drawOnChartArea: false }
+                    },
+                    y2: {
+                        type: 'linear', position: 'right', display: false,
+                        title: { display: true, text: 'Kelembapan (%)' },
+                        grid: { drawOnChartArea: false }
+                    },
+                    y3: {
+                        type: 'linear', position: 'left', display: false,
+                        title: { display: true, text: 'pH' },
+                        grid: { drawOnChartArea: false },
+                        min: 0, max: 14
                     }
                 }
             }
         });
 
-        // ===============================
+        // Checkbox filter -> toggle dataset + axis-nya
+        const axisForKey = { suhu: 'y', kelembapan: 'y2', co2: 'y1', ph: 'y3' };
+        document.querySelectorAll('.chart-filter-pill input[data-series]').forEach(box => {
+            box.addEventListener('change', function () {
+                const key = this.dataset.series;
+                const ds = mainChart.data.datasets.find(d => d.key === key);
+                if (!ds) return;
+                ds.hidden = !this.checked;
+                mainChart.options.scales[axisForKey[key]].display = this.checked;
+                mainChart.update();
+            });
+        });
+
+        function applyChartData(labels, dataByKey) {
+            mainChart.data.labels = labels;
+            mainChart.data.datasets.forEach(ds => {
+                ds.data = dataByKey[ds.key] || [];
+            });
+            mainChart.update();
+        }
+
+        // ==========================================================
         // FASE CHIP: update warna/ikon saat data realtime berubah
-        // ===============================
+        // ==========================================================
         function updateFaseChip(faseText) {
             const faseKey = (faseText || '').toLowerCase();
             const faseChip = document.getElementById('faseChip');
@@ -402,279 +506,223 @@
             faseDesc.innerHTML = faseDescText;
         }
 
-        // ===============================
-        // REALTIME DASHBOARD + TABLE
-        // ===============================
-        async function refreshDashboard() {
-            try {
-                const response = await fetch('/dashboard-data?t=' + Date.now());
-                const data = await response.json();
-
-                const current = data.currentData || {};
-                const system = data.system || {};
-                const control = data.control || {};
-
-                // SENSOR CARD
-                suhuValue.innerHTML = current.suhu + '<small> °C</small>';
-                kelembapanValue.innerHTML = current.kelembapan + '<small> %</small>';
-                co2Value.innerHTML = current.co2 + '<small> ppm</small>';
-                phValue.innerHTML = current.ph;
-                // timestamp
-if(document.getElementById('timestampValue')){
-
-    timestampValue.innerHTML =
-        current.timestamp;
-
-}
-
-
-document.getElementById('topbarSync').innerHTML =
-    current.timestamp;
-
-
-// fase
-faseValue.innerHTML =
-    current.fase;
-
-
-// hari
-if(document.getElementById('hariValue')){
-
-    hariValue.innerHTML =
-        current.hari;
-
-}
-
-
-document.getElementById('topbarHari').innerHTML =
-    'Hari ke-' + current.hari;
-                currentRowValue.innerHTML = system.current_row;
-
-                // FASE (nilai berasal dari Firebase)
-                updateFaseChip(current.fase);
-
-                // AI
-                let kematangan = current.kematangan_pct ?? 0;
-                kematanganValue.innerHTML = kematangan;
-                kematanganBar.style.width = kematangan + '%';
-                sisaHariValue.innerHTML = current.sisa_hari;
-
-                // ===============================
-                // STATUS DEVICE SESUAI MODE
-                // ===============================
-
-                let kipasStatus = 0;
-                let pengadukStatus = 0;
-
-
-                // MODE AUTO
-                if (control.mode === 'auto') {
-
-                    kipasStatus =
-                        current.kipas ?? 0;
-
-                    pengadukStatus =
-                        current.pengaduk ?? 0;
-
-                }
-
-
-                // MODE MANUAL
-                else {
-
-                    kipasStatus =
-                        control.kipas_manual ?? 0;
-
-                    pengadukStatus =
-                        control.pengaduk_manual ?? 0;
-
-                }
-
-
-                // tampil status kipas
-                kipasValue.innerHTML =
-                    kipasStatus == 1 ? 'ON' : 'OFF';
-
-
-                kipasValue.className =
-                    kipasStatus == 1 ?
-                    'badge bg-success' :
-                    'badge bg-secondary';
-
-
-                // tampil status pengaduk
-                pengadukValue.innerHTML =
-                    pengadukStatus == 1 ? 'ON' : 'OFF';
-
-
-                pengadukValue.className =
-                    pengadukStatus == 1 ?
-                    'badge bg-success' :
-                    'badge bg-secondary';
-
-                // MANUAL COMMAND
-                // ===============================
-                // MODE CONTROL
-                // ===============================
-
-                modeAuto.checked =
-                    control.mode == 'auto';
-
-
-                modeManual.checked =
-                    control.mode == 'manual';
-
-
-                // isi posisi switch manual
-
-                blowerToggle.checked =
-                    control.kipas_manual == 1;
-
-
-                pengadukToggle.checked =
-                    control.pengaduk_manual == 1;
-
-
-
-                // ===============================
-                // HIDE MANUAL COMMAND SAAT AUTO
-                // ===============================
-
-                if (control.mode === 'auto') {
-
-
-                    blowerManualBox.style.display =
-                        'none';
-
-
-                    pengadukManualBox.style.display =
-                        'none';
-
-
-                    // matikan akses switch
-                    blowerToggle.disabled = true;
-
-                    pengadukToggle.disabled = true;
-
-
-                } else {
-
-
-                    blowerManualBox.style.display =
-                        'flex';
-
-
-                    pengadukManualBox.style.display =
-                        'flex';
-
-
-                    blowerToggle.disabled = false;
-
-                    pengadukToggle.disabled = false;
-
-                }
-
-
-
-                // TABLE LOG
-                let html = "";
-                (data.history || []).forEach(function(item, index) {
-                    html += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>Hari ${item.hari}</td>
-                        <td>${item.timestamp}</td>
-                        <td>${item.suhu}°C</td>
-                        <td>${item.kelembapan}%</td>
-                        <td>${item.co2} ppm</td>
-                        <td>${item.ph}</td>
-                        <td><span class="badge bg-light text-dark border">${item.fase}</span></td>
-                    </tr>`;
+        // ==========================================================
+        // Animasi status alat (spin saat ON)
+        // ==========================================================
+        function setDeviceAnim(elId, isOn) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.classList.toggle('is-spinning', !!isOn);
+        }
+
+        // ==========================================================
+        // FIREBASE CLIENT SDK — realtime listener
+        // Laravel hanya untuk render halaman awal + auth.
+        // Semua data sensor & tabel didengarkan langsung dari sini.
+        //
+        // GANTI firebaseConfig di bawah dengan config project Firebase
+        // Anda (yang sama dipakai kreait/laravel-firebase di backend).
+        // Sesuaikan juga path RTDB (sensor/current, control, history,
+        // system, batch) dengan struktur database Anda yang sebenarnya.
+        // ==========================================================
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getDatabase, ref, onValue, set, child
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            databaseURL: "{{ env('FIREBASE_DATABASE_URL') }}",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- Path realtime database ---
+        const systemRef  = ref(db, 'system');
+        const controlRef = ref(db, 'control');
+
+        let currentListener = null;
+        let historyListener = null;
+        let batchListener = null;
+        let activeBatchId = null;
+
+        let latestControlMode = 'auto';
+        let latestCurrent = {};
+
+        // 1) SYSTEM (ambil active_batch untuk mendengarkan path batch yang dinamis)
+        onValue(systemRef, (snapshot) => {
+            const system = snapshot.val() || {};
+            currentRowValue.innerHTML = system.current_row || 1;
+
+            const newActiveBatchId = system.active_batch;
+            if (newActiveBatchId && newActiveBatchId !== activeBatchId) {
+                activeBatchId = newActiveBatchId;
+
+                // Hapus listener sebelumnya jika ada
+                if (currentListener) currentListener();
+                if (historyListener) historyListener();
+                if (batchListener) batchListener();
+
+                // Setup listener baru untuk active batch saat ini
+                const activeBatchRef = ref(db, `batches/${activeBatchId}`);
+                const currentRef = ref(db, `batches/${activeBatchId}/current_data`);
+                const historyRef = ref(db, `batches/${activeBatchId}/history`);
+
+                // A. SENSOR TERKINI
+                currentListener = onValue(currentRef, (currentSnap) => {
+                    const current = currentSnap.val() || {};
+                    latestCurrent = current;
+
+                    suhuValue.innerHTML = (current.suhu !== undefined ? current.suhu : 0) + '<small> °C</small>';
+                    kelembapanValue.innerHTML = (current.kelembapan !== undefined ? current.kelembapan : 0) + '<small> %</small>';
+                    co2Value.innerHTML = (current.co2 !== undefined ? current.co2 : 0) + '<small> ppm</small>';
+                    phValue.innerHTML = current.ph !== undefined ? current.ph : '0.0';
+
+                    const timestamp = current.timestamp || '-';
+                    if (document.getElementById('timestampValue')) {
+                        timestampValue.innerHTML = timestamp;
+                    }
+                    const topbarSync = document.getElementById('topbarSync');
+                    if (topbarSync) topbarSync.innerHTML = timestamp;
+
+                    const fase = current.fase || '-';
+                    faseValue.innerHTML = fase;
+                    updateFaseChip(fase);
+
+                    const hari = current.hari !== undefined ? current.hari : 0;
+                    if (document.getElementById('hariValue')) {
+                        hariValue.innerHTML = hari;
+                    }
+                    const topbarHari = document.getElementById('topbarHari');
+                    if (topbarHari) topbarHari.innerHTML = 'Hari ke-' + hari;
+
+                    const kematangan = current.kematangan_pct ?? 0;
+                    kematanganValue.innerHTML = kematangan;
+                    kematanganBar.style.width = kematangan + '%';
+                    sisaHariValue.innerHTML = current.sisa_hari ?? 0;
+
+                    recomputeDeviceStatus(current);
                 });
-                tableBody.innerHTML = html;
 
-            } catch (error) {
-                console.log("Realtime Error", error);
+                // B. BATCH STATUS BADGE
+                batchListener = onValue(activeBatchRef, (batchSnap) => {
+                    const batch = batchSnap.val() || {};
+                    const badge = document.getElementById('batchStatusBadge');
+                    if (badge && batch.status) {
+                        const label = batch.status.charAt(0).toUpperCase() + batch.status.slice(1);
+                        badge.innerHTML = 'Status: ' + label + ' <i class="bi bi-chevron-down ms-1"></i>';
+                    }
+                });
+
+                // C. HISTORY TABLE & CHART
+                historyListener = onValue(historyRef, (historySnap) => {
+                    const raw = historySnap.val() || {};
+                    const items = Object.values(raw);
+
+                    // Sort descending untuk tabel (terbaru di atas)
+                    const sortedItems = [...items].sort((a, b) => {
+                        const timeA = a.timestamp || '';
+                        const timeB = b.timestamp || '';
+                        return timeB.localeCompare(timeA);
+                    });
+                    const tableItems = sortedItems.slice(0, 10);
+
+                    let html = "";
+                    tableItems.forEach((item, index) => {
+                        html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>Hari ${item.hari ?? 0}</td>
+                            <td>${item.timestamp ?? '-'}</td>
+                            <td>${item.suhu ?? 0}°C</td>
+                            <td>${item.kelembapan ?? 0}%</td>
+                            <td>${Number(item.co2 ?? 0).toLocaleString()} ppm</td>
+                            <td>${item.ph ?? 0}</td>
+                            <td><span class="badge bg-light text-dark border">${item.fase ?? '-'}</span></td>
+                        </tr>`;
+                    });
+                    tableBody.innerHTML = html || '<tr><td colspan="8" class="text-center text-muted py-4">Belum ada data riwayat kompos untuk batch ini.</td></tr>';
+
+                    // Urutan waktu naik untuk visualisasi grafik kontinu (10 data terakhir)
+                    const chartItems = items.slice(-10);
+                    applyChartData(
+                        chartItems.map(i => 'Hari ' + (i.hari ?? 0)),
+                        {
+                            suhu: chartItems.map(i => i.suhu ?? 0),
+                            kelembapan: chartItems.map(i => i.kelembapan ?? 0),
+                            co2: chartItems.map(i => i.co2 ?? 0),
+                            ph: chartItems.map(i => i.ph ?? 0)
+                        }
+                    );
+                });
             }
+        });
+
+        // 2) CONTROL (mode auto/manual + manual command)
+        onValue(controlRef, (snapshot) => {
+            const control = snapshot.val() || {};
+            latestControlMode = control.mode || 'auto';
+
+            modeAuto.checked = latestControlMode === 'auto';
+            modeManual.checked = latestControlMode === 'manual';
+
+            blowerToggle.checked = control.kipas_manual == 1;
+            pengadukToggle.checked = control.pengaduk_manual == 1;
+
+            const showManual = latestControlMode !== 'auto';
+            blowerManualBox.style.display = showManual ? 'flex' : 'none';
+            pengadukManualBox.style.display = showManual ? 'flex' : 'none';
+            blowerToggle.disabled = !showManual;
+            pengadukToggle.disabled = !showManual;
+
+            recomputeDeviceStatus(latestCurrent, control);
+        });
+
+        function recomputeDeviceStatus(current, control) {
+            latestCurrent = current || latestCurrent;
+            control = control || {};
+
+            let kipasStatus = 0;
+            let pengadukStatus = 0;
+
+            if (latestControlMode === 'auto') {
+                kipasStatus = latestCurrent.kipas ?? 0;
+                pengadukStatus = latestCurrent.pengaduk ?? 0;
+            } else {
+                kipasStatus = control.kipas_manual ?? 0;
+                pengadukStatus = control.pengaduk_manual ?? 0;
+            }
+
+            kipasValue.innerHTML = kipasStatus == 1 ? 'ON' : 'OFF';
+            kipasValue.className = kipasStatus == 1 ? 'badge bg-success' : 'badge bg-secondary';
+            setDeviceAnim('kipasIcon', kipasStatus == 1);
+
+            pengadukValue.innerHTML = pengadukStatus == 1 ? 'ON' : 'OFF';
+            pengadukValue.className = pengadukStatus == 1 ? 'badge bg-success' : 'badge bg-secondary';
+            setDeviceAnim('pengadukIcon', pengadukStatus == 1);
         }
 
-        // ===============================
-        // REALTIME CHART
-        // ===============================
-        async function refreshCharts() {
-            try {
-                const response = await fetch('/chart-data?t=' + Date.now());
-                const data = await response.json();
-
-                mainChart.data.labels = data.labels;
-                mainChart.data.datasets[0].data = data.suhuData;
-                mainChart.data.datasets[1].data = data.co2Data;
-                mainChart.update();
-            } catch (error) {
-                console.log("Chart Error", error);
-            }
-        }
-
-        setInterval(refreshDashboard, 2000);
-        setInterval(refreshCharts, 5000);
-
-        refreshDashboard();
-        refreshCharts();
-
-        document.getElementById('blowerToggle').addEventListener('change', function() {
-            fetch('/device-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    type: 'kipas',
-                    value: this.checked ? 1 : 0
-                })
-            });
+        // ==========================================================
+        // DEVICE CONTROL — tulis langsung ke Firebase RTDB
+        // ==========================================================
+        blowerToggle.addEventListener('change', function () {
+            set(child(controlRef, 'kipas_manual'), this.checked ? 1 : 0);
         });
 
-        document.getElementById('pengadukToggle').addEventListener('change', function() {
-            fetch('/device-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    type: 'pengaduk',
-                    value: this.checked ? 1 : 0
-                })
-            });
+        pengadukToggle.addEventListener('change', function () {
+            set(child(controlRef, 'pengaduk_manual'), this.checked ? 1 : 0);
         });
 
-        document.getElementById('modeAuto').addEventListener('change', function() {
-            fetch('/device-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    type: 'mode',
-                    value: 'auto'
-                })
-            });
+        modeAuto.addEventListener('change', function () {
+            set(child(controlRef, 'mode'), 'auto');
         });
 
-        document.getElementById('modeManual').addEventListener('change', function() {
-            fetch('/device-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    type: 'mode',
-                    value: 'manual'
-                })
-            });
+        modeManual.addEventListener('change', function () {
+            set(child(controlRef, 'mode'), 'manual');
         });
+    </script>
     </script>
 @endpush

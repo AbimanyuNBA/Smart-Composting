@@ -184,14 +184,19 @@ Route::middleware('auth')->group(function(){
 
 
 
-    // ==========================
-    // HISTORY BATCH
-    // ==========================
-
-
     Route::get(
         '/history',
         [SimulationController::class,'history']
+    );
+
+    Route::get(
+        '/history/download-csv',
+        [SimulationController::class,'downloadCsv']
+    );
+
+    Route::get(
+        '/history/print-pdf',
+        [SimulationController::class,'printPdf']
     );
 
    
